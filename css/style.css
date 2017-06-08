@@ -1,0 +1,173 @@
+/** Font inclusions **/
+
+@font-face {
+  font-family: "Inconsolata-g";
+  src: url("../fonts/Inconsolata-g for Powerline.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("../fonts/Roboto-Regular.ttf") format("truetype");
+}
+
+/* General */
+
+html {
+  height: 100%;
+}
+
+body {
+  font-family: Roboto;
+  color: white;
+  height: 100%;
+}
+
+.center {
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+.container {
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  -webkit-align-content: stretch;
+  align-content: stretch;
+  height: 100%;
+}
+
+/** Field/canvas **/
+
+.field {
+  flex: 3;
+  /*border: 1px solid red;*/
+}
+
+/** Sidebar stuff **/
+
+.sidebar {
+  /*border: 1px solid blue;*/
+  background: #131316;
+  border-left: 6px solid #32323f;
+  /*box-shadow: 10px 10px 5px #ffffff;*/
+  flex: 1;
+  padding: 2em;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.sidebar > * {
+  flex: 1;
+  margin-bottom: 0.5em;
+}
+
+div.controlsBar {
+  text-align: center;
+}
+
+div.controlsBar > button {
+  width: 4rem;
+  height: 4rem;
+  margin: 1em;
+  font-size: 0.7em;
+}
+
+/* Properties Table */
+
+.properties-table {
+  color: black;
+}
+
+table.properties-table {
+  border-top: 1px solid #BBB;
+  border-left: 1px solid #BBB;
+  width: 100%;
+}
+
+table.properties-table tr {
+  border-bottom: 1px solid #BBB;
+  height: 1em;
+}
+
+table.properties-table td {
+  position: relative;
+  border-right: 1px solid #BBB;
+  padding: 0.2em;
+  background: white;
+  width: 75%;
+  height: 1em;
+}
+
+table.properties-table td.prop_common {
+  background: #DDD;
+}
+
+table.properties-table td:first-child {
+  width: 25%;
+}
+
+table.properties-table input {
+  background: inherit;
+  margin: 0;
+  padding: 0;
+  border: none;
+  width: 100%;
+  font: inherit;
+}
+
+/* Buttons */
+
+button.circle {
+  border: none;
+  border-radius: 1em;
+  outline: none;
+  text-align: center;
+  height: 1.7em;
+}
+
+button.circle.remove {
+  background: #C33;
+  color: white;
+}
+
+button.circle.remove:hover {
+  background: #D44;
+}
+
+button.circle.remove:hover:active {
+  background: #E55;
+}
+
+table.properties-table button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+}
+
+button.circle.add {
+  background: #3C3;
+  color: white;
+}
+
+button.circle.add:hover {
+  background: #4D4;
+}
+
+button.circle.add:hover:active {
+  background: #5E5;
+}
+
+.eventEditor {
+  width: 100%;
+  height: 25em;
+  font-family: "Inconsolata-g", Consolas, monospace;
+  resize: vertical;
+}
+
