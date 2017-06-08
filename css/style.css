@@ -26,10 +26,6 @@ h1 {
   text-align: center;
 }
 
-.container {
-  height: 100%;
-}
-
 .col {
   top: 0;
   bottom: 0;
@@ -44,32 +40,75 @@ h1 {
 
 .sidebar {
   background: #131316;
-  border-left: 6px solid #32323f;
-  padding: 2em;
+  border-left: 6px solid #2f2f37;
+  /*padding: 2em;*/
   
   width: 30em;
   right: 0;
-  background: black;
   color: white;
   overflow-y: auto;
 }
 
 .sidebar > * {
-  margin-bottom: 0.5em;
+  margin: 2em;
 }
 
-div.controlsBar {
+div.sidebar-header {
+  background: #3b3b44;
+  margin: 0;
+  padding: 0.75em;
+}
+
+div.sidebar-controls {
+  margin: 0;
   text-align: center;
+  display: flex;
+  /*border-top: 1px solid #333;*/
 }
 
-div.controlsBar > button {
-  width: 4rem;
-  height: 4rem;
-  margin: 1em;
-  font-size: 0.7em;
+div.sidebar-controls:first-child {
+  border-top: none;
+}
+
+div.sidebar-controls > button {
+  height: 2em;
+  font-size: 1em;
+  flex: 1;
+  border: none;
+  /*margin: 0.2em;*/
+  background: #53535f;
+  outline: none;
+  border-left: 1px solid #474752;
+  color: lightgray;
+  
+  -moz-transition: all .1s ease-in;
+  -o-transition: all .1s ease-in;
+  -webkit-transition: all .1s ease-in;
+  transition: all .1s ease-in;
+}
+
+div.sidebar-controls:nth-child(2n+1) > button {
+  background: #6b6b7b;
+  border-left: 1px solid #5f5f6d;
+}
+
+div.sidebar-controls > button:first-child {
+  border-left: none;
+}
+
+div.sidebar-controls > button:hover {
+  background: #777788;
+}
+
+div.sidebar-controls > button:active {
+  background: #848494;
 }
 
 /* Properties Table */
+
+div.sidebar-properties > * {
+  margin-bottom: 0.4em;
+}
 
 .properties-table {
   color: black;
@@ -112,8 +151,7 @@ table.properties-table input {
   font: inherit;
 }
 
-
-/* Buttons */
+/* Circle Buttons */
 
 button.circle {
   border: none;
@@ -121,6 +159,11 @@ button.circle {
   outline: none;
   text-align: center;
   height: 1.7em;
+
+  -moz-transition: all .1s ease-in;
+  -o-transition: all .1s ease-in;
+  -webkit-transition: all .1s ease-in;
+  transition: all .1s ease-in;
 }
 
 button.circle.remove {
@@ -154,6 +197,12 @@ button.circle.add:hover {
 
 button.circle.add:hover:active {
   background: #5E5;
+}
+
+/* Events editor */
+
+div.sidebar-events > * {
+  margin-bottom: 0.4em;
 }
 
 .eventEditor {

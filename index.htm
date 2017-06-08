@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="css/reset.css">
     <link href="css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="css/style2.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
   </head>
 
   <body>
@@ -17,24 +17,29 @@
     </div>
 
     <div class="sidebar col">
-      <div class="sidebar-element sidebar-header">
+      <div class="sidebar-header">
         <h1 class="center">KL Game Maker</h1>
         <div class="center">v0.00</div>
       </div>
-      
-      <div class="sidebar-element sidebar-controls">
-        <div class="controlsBar">
-          <button>Run</button>
-          <button>Stop</button>
-        </div>
 
-        <div class="controlsBar">
-          <button>Add Sprite</button>
-          <button>Remove Sprite</button>
-        </div>
+      <div class="sidebar-controls">
+        <button><i class="fa fa-file-o" aria-hidden="true"></i></button>
+        <button><i class="fa fa-folder-open-o" aria-hidden="true"></i></button>
+        <button><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+        <button><i class="fa fa-share-square-o" aria-hidden="true"></i></button>
+      </div>
+      
+      <div class="sidebar-controls">
+        <button><i class="fa fa-play" aria-hidden="true"></i></button>
+        <button><i class="fa fa-stop" aria-hidden="true"></i></button>
       </div>
 
-      <div class="sidebar-element sidebar-properties">
+      <div class="sidebar-controls">
+        <button>Add Sprite</button>
+        <button>Remove Sprite</button>
+      </div>
+
+      <div class="sidebar-properties">
         <div>Properties:</div>
 
         <table class="properties-table">
@@ -61,7 +66,7 @@
         <button class="circle add"><i class="fa fa-plus"></i></button>
       </div>
         
-      <div class="sidebar-element sidebar-events">
+      <div class="sidebar-events">
         <div>Event Editor:</div>
 
         <select name="events">
