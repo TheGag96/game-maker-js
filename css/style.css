@@ -10,20 +10,11 @@
   src: url("../fonts/Roboto-Regular.ttf") format("truetype");
 }
 
-/* General */
-
-html {
-  height: 100%;
-}
+/** General **/
 
 body {
+  margin: 0;
   font-family: Roboto;
-  color: white;
-  height: 100%;
-}
-
-.center {
-  text-align: center;
 }
 
 h1 {
@@ -31,39 +22,39 @@ h1 {
   font-weight: 700;
 }
 
+.center {
+  text-align: center;
+}
+
 .container {
-  display: flex;
-  display: -webkit-flex;
-  flex-direction: row;
-  -webkit-flex-direction: row;
-  -webkit-align-content: stretch;
-  align-content: stretch;
   height: 100%;
 }
 
-/** Field/canvas **/
-
-.field {
-  flex: 3;
-  /*border: 1px solid red;*/
+.col {
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  position: absolute;
 }
 
-/** Sidebar stuff **/
+.main {
+  left: 0;
+  right: 30em;
+}
 
 .sidebar {
-  /*border: 1px solid blue;*/
   background: #131316;
   border-left: 6px solid #32323f;
-  /*box-shadow: 10px 10px 5px #ffffff;*/
-  flex: 1;
   padding: 2em;
-  flex-direction: column;
-  height: 100%;
-  overflow-y: scroll;
+  
+  width: 30em;
+  right: 0;
+  background: black;
+  color: white;
+  overflow-y: auto;
 }
 
 .sidebar > * {
-  flex: 1;
   margin-bottom: 0.5em;
 }
 
@@ -121,6 +112,7 @@ table.properties-table input {
   font: inherit;
 }
 
+
 /* Buttons */
 
 button.circle {
@@ -170,4 +162,3 @@ button.circle.add:hover:active {
   font-family: "Inconsolata-g", Consolas, monospace;
   resize: vertical;
 }
-

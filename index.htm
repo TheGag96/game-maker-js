@@ -8,70 +8,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="css/reset.css">
     <link href="css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="stylesheet" type="text/css" href="css/style2.css">
   </head>
+
   <body>
-    <div class="container">
+    <div class="main col">
       <canvas class="field"></canvas>
+    </div>
+
+    <div class="sidebar col">
+      <div class="sidebar-element sidebar-header">
+        <h1 class="center">KL Game Maker</h1>
+        <div class="center">v0.00</div>
+      </div>
       
-      <div class="sidebar">
-
-        <div class="sidebar-element sidebar-header">
-          <h1 class="center">KL Game Maker</h1>
-          <div class="center">v0.00</div>
-        </div>
-        
-        <div class="sidebar-element sidebar-controls">
-          <div class="controlsBar">
-            <button>Run</button>
-            <button>Stop</button>
-          </div>
-
-          <div class="controlsBar">
-            <button>Add Sprite</button>
-            <button>Remove Sprite</button>
-          </div>
+      <div class="sidebar-element sidebar-controls">
+        <div class="controlsBar">
+          <button>Run</button>
+          <button>Stop</button>
         </div>
 
-        <div class="sidebar-element sidebar-properties">
-          <div>Properties:</div>
-
-          <table class="properties-table">
-            <tr>
-              <td class="prop_common">name</td> <td><input></td>
-            </tr>
-            <tr>
-              <td class="prop_common">x</td> <td><input></td>
-            </tr>
-            <tr>
-              <td class="prop_common">y</td> <td><input></td>
-            </tr>
-            <tr>
-              <td class="prop_common">width</td> <td><input></td>
-            </tr>
-            <tr>
-              <td class="prop_common">height</td> <td><input></td>
-            </tr>
-            <tr>
-              <td class="prop_common">color</td><td><input><button class="circle remove"><i class="fa fa-times"></i></button></td>
-            </tr>
-          </table>
-
-          <button class="circle add"><i class="fa fa-plus"></i></button>
-        </div>
-          
-        <div class="sidebar-element sidebar-events">
-          <div>Event Editor:</div>
-
-          <select name="events">
-            <option value="gameStart">Game Start</option>
-            <option value="everyFrame">Every Frame</option>
-            <option value="onCollision">On Collision</option>
-          </select>
-
-          <textarea class="eventEditor"></textarea>
+        <div class="controlsBar">
+          <button>Add Sprite</button>
+          <button>Remove Sprite</button>
         </div>
       </div>
+
+      <div class="sidebar-element sidebar-properties">
+        <div>Properties:</div>
+
+        <table class="properties-table">
+          <tr>
+            <td class="prop_common">name</td> <td><input></td>
+          </tr>
+          <tr>
+            <td class="prop_common">x</td> <td><input></td>
+          </tr>
+          <tr>
+            <td class="prop_common">y</td> <td><input></td>
+          </tr>
+          <tr>
+            <td class="prop_common">width</td> <td><input></td>
+          </tr>
+          <tr>
+            <td class="prop_common">height</td> <td><input></td>
+          </tr>
+          <tr>
+            <td class="prop_common">color</td><td><input><button class="circle remove"><i class="fa fa-times"></i></button></td>
+          </tr>
+        </table>
+
+        <button class="circle add"><i class="fa fa-plus"></i></button>
+      </div>
+        
+      <div class="sidebar-element sidebar-events">
+        <div>Event Editor:</div>
+
+        <select name="events">
+          <option value="gameStart">Game Start</option>
+          <option value="everyFrame">Every Frame</option>
+          <option value="onCollision">On Collision</option>
+        </select>
+
+        <textarea class="eventEditor"></textarea>
+      </div>
     </div>
-  </body> 
+  </body>
 </html>
