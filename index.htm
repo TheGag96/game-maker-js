@@ -9,11 +9,12 @@
     <link rel="stylesheet" type="text/css" href="css/reset.css">
     <link href="css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script src="js/main.js"></script>
   </head>
 
   <body>
     <div class="main col">
-      <canvas class="field"></canvas>
+      <canvas id="field"></canvas>
     </div>
 
     <div class="sidebar col">
@@ -23,15 +24,15 @@
       </div>
 
       <div class="sidebar-controls">
-        <button><i class="fa fa-file-o" aria-hidden="true"></i></button>
-        <button><i class="fa fa-folder-open-o" aria-hidden="true"></i></button>
-        <button><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-        <button><i class="fa fa-share-square-o" aria-hidden="true"></i></button>
+        <button><i class="fa fa-file-o" aria-hidden="divue"></i></button>
+        <button><i class="fa fa-folder-open-o" aria-hidden="divue"></i></button>
+        <button><i class="fa fa-floppy-o" aria-hidden="divue"></i></button>
+        <button><i class="fa fa-share-square-o" aria-hidden="divue"></i></button>
       </div>
       
       <div class="sidebar-controls">
-        <button><i class="fa fa-play" aria-hidden="true"></i></button>
-        <button><i class="fa fa-stop" aria-hidden="true"></i></button>
+        <button><i class="fa fa-play" aria-hidden="divue"></i></button>
+        <button><i class="fa fa-stop" aria-hidden="divue"></i></button>
       </div>
 
       <div class="sidebar-controls">
@@ -42,28 +43,34 @@
       <div class="sidebar-properties">
         <div>Properties:</div>
 
-        <table class="properties-table">
-          <tr>
-            <td class="prop_common">name</td> <td><input></td>
-          </tr>
-          <tr>
-            <td class="prop_common">x</td> <td><input></td>
-          </tr>
-          <tr>
-            <td class="prop_common">y</td> <td><input></td>
-          </tr>
-          <tr>
-            <td class="prop_common">width</td> <td><input></td>
-          </tr>
-          <tr>
-            <td class="prop_common">height</td> <td><input></td>
-          </tr>
-          <tr>
-            <td class="prop_common">color</td><td><input><button class="circle remove"><i class="fa fa-times"></i></button></td>
-          </tr>
-        </table>
+        <div class="properties-table">
+          <div class="table-row">
+            <div class="table-col prop_common">name</div>
+            <div class="table-col"><input></div>
+          </div>
+          <div class="table-row">
+            <div class="table-col prop_common">x</div>
+            <div class="table-col"><input></div>
+          </div>
+          <div class="table-row">
+            <div class="table-col prop_common">y</div>
+            <div class="table-col"><input></div>
+          </div>
+          <div class="table-row">
+            <div class="table-col prop_common">width</div>
+            <div class="table-col"><input></div>
+          </div>
+          <div class="table-row">
+            <div class="table-col prop_common">height</div>
+            <div class="table-col"><input></div>
+          </div>
+          <div class="table-row">
+            <div class="table-col prop_common">color</div>
+            <div class="table-col"><input><button class="circle-button remove"><i class="fa fa-times"></i></button></div>
+          </div>
+        </div>
 
-        <button class="circle add"><i class="fa fa-plus"></i></button>
+        <button class="circle-button add"><i class="fa fa-plus"></i></button>
       </div>
         
       <div class="sidebar-events">

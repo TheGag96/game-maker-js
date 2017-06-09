@@ -12,6 +12,16 @@
 
 /** General **/
 
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
 body {
   margin: 0;
   font-family: Roboto;
@@ -20,6 +30,10 @@ body {
 h1 {
   font-size: 1.5em;
   font-weight: 700;
+}
+
+button {
+  cursor: pointer;
 }
 
 .center {
@@ -40,7 +54,7 @@ h1 {
 
 .sidebar {
   background: #131316;
-  border-left: 6px solid #2f2f37;
+  border-left: 3px solid #2f2f37;
   /*padding: 2em;*/
   
   width: 30em;
@@ -53,24 +67,24 @@ h1 {
   margin: 2em;
 }
 
-div.sidebar-header {
+.sidebar-header {
   background: #3b3b44;
   margin: 0;
   padding: 0.75em;
 }
 
-div.sidebar-controls {
+.sidebar-controls {
   margin: 0;
   text-align: center;
   display: flex;
   /*border-top: 1px solid #333;*/
 }
 
-div.sidebar-controls:first-child {
+.sidebar-controls:first-child {
   border-top: none;
 }
 
-div.sidebar-controls > button {
+.sidebar-controls > button {
   height: 2em;
   font-size: 1em;
   flex: 1;
@@ -81,127 +95,136 @@ div.sidebar-controls > button {
   border-left: 1px solid #474752;
   color: lightgray;
   
-  -moz-transition: all .1s ease-in;
-  -o-transition: all .1s ease-in;
-  -webkit-transition: all .1s ease-in;
-  transition: all .1s ease-in;
+  -moz-transition: all .075s ease-in;
+  -o-transition: all .075s ease-in;
+  -webkit-transition: all .075s ease-in;
+  transition: all .075s ease-in;
 }
-
-div.sidebar-controls:nth-child(2n+1) > button {
+ 
+.sidebar-controls:nth-child(2n+1) > button {
   background: #6b6b7b;
   border-left: 1px solid #5f5f6d;
 }
 
-div.sidebar-controls > button:first-child {
+.sidebar-controls > button:first-child {
   border-left: none;
 }
 
-div.sidebar-controls > button:hover {
+.sidebar-controls > button:hover {
   background: #777788;
 }
 
-div.sidebar-controls > button:active {
+.sidebar-controls > button:active {
   background: #848494;
+  outline: none !important;
 }
+
+/*.sidebar-controls > button:focus {
+  outline: #00F;
+  outline-style: auto;
+  outline-width: 5px;
+}*/
 
 /* Properties Table */
 
-div.sidebar-properties > * {
+.sidebar-properties > * {
   margin-bottom: 0.4em;
 }
 
 .properties-table {
   color: black;
-}
-
-table.properties-table {
   border-top: 1px solid #BBB;
   border-left: 1px solid #BBB;
   width: 100%;
 }
 
-table.properties-table tr {
+.table-row {
+  display: flex;
   border-bottom: 1px solid #BBB;
-  height: 1em;
+  height: auto;
 }
 
-table.properties-table td {
+.table-col {
+  display: flex;
   position: relative;
   border-right: 1px solid #BBB;
-  padding: 0.2em;
+  /*padding: 0.2em;*/
   background: white;
-  width: 75%;
-  height: 1em;
+  height: auto;
+  flex: 3;
+  align-items: center;
 }
 
-table.properties-table td.prop_common {
+.table-col.prop_common {
   background: #DDD;
 }
 
-table.properties-table td:first-child {
-  width: 25%;
+.table-col:first-child {
+  padding: 0.2em;
+  /*width: 25%;*/
+  flex: 1;
 }
 
-table.properties-table input {
+.properties-table input {
   background: inherit;
   margin: 0;
-  padding: 0;
+  padding: 0.2em;
   border: none;
-  width: 100%;
+  width: 100%; 
   font: inherit;
 }
 
-/* Circle Buttons */
+/* Circle-button Buttons */
 
-button.circle {
+.circle-button {
   border: none;
   border-radius: 1em;
   outline: none;
   text-align: center;
   height: 1.7em;
 
-  -moz-transition: all .1s ease-in;
-  -o-transition: all .1s ease-in;
-  -webkit-transition: all .1s ease-in;
-  transition: all .1s ease-in;
+  -moz-transition: all .075s ease-in;
+  -o-transition: all .075s ease-in;
+  -webkit-transition: all .075s ease-in;
+  transition: all .075s ease-in;
 }
 
-button.circle.remove {
+.circle-button.remove {
   background: #C33;
   color: white;
 }
 
-button.circle.remove:hover {
+.circle-button.remove:hover {
   background: #D44;
 }
 
-button.circle.remove:hover:active {
+.circle-button.remove:active {
   background: #E55;
 }
 
-table.properties-table button {
+.properties-table button {
   position: absolute;
   right: 0;
   top: 0;
   height: 100%;
 }
 
-button.circle.add {
+.circle-button.add {
   background: #3C3;
   color: white;
 }
 
-button.circle.add:hover {
+.circle-button.add:hover {
   background: #4D4;
 }
 
-button.circle.add:hover:active {
+.circle-button.add:active {
   background: #5E5;
 }
 
 /* Events editor */
 
-div.sidebar-events > * {
+.sidebar-events > * {
   margin-bottom: 0.4em;
 }
 
