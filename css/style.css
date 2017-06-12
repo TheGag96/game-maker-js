@@ -131,7 +131,7 @@ button {
   margin-bottom: 0.4em;
 }
 
-.properties-table {
+#properties-table {
   color: black;
   border-top: 1px solid #BBB;
   border-left: 1px solid #BBB;
@@ -165,7 +165,7 @@ button {
   flex: 1;
 }
 
-.properties-table input {
+#properties-table input {
   background: inherit;
   margin: 0;
   padding: 0.2em;
@@ -202,7 +202,7 @@ button {
   background: #E55;
 }
 
-.properties-table button {
+#properties-table button {
   position: absolute;
   right: 0;
   top: 0;
