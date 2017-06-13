@@ -14,7 +14,7 @@
 
   <body>
     <div class="main col">
-      <canvas id="field"></canvas>
+      <canvas id="field" tabindex="1"></canvas>
     </div>
 
     <div class="sidebar col">
@@ -31,8 +31,7 @@
       </div>
       
       <div class="sidebar-controls">
-        <button id="play-button"><i class="fa fa-play" aria-hidden="true"></i></button>
-        <button id="pause-button"><i class="fa fa-pause" aria-hidden="true"></i></button>
+        <button id="play-pause-button"><i class="fa fa-play" aria-hidden="true"></i></button>
         <button id="stop-button"><i class="fa fa-stop" aria-hidden="true"></i></button>
       </div>
 
@@ -45,30 +44,7 @@
         <div>Properties:</div>
 
         <div id="properties-table">
-          <div class="table-row">
-            <div class="table-col prop_common">name</div>
-            <div class="table-col"><input></div>
-          </div>
-          <div class="table-row">
-            <div class="table-col prop_common">x</div>
-            <div class="table-col"><input></div>
-          </div>
-          <div class="table-row">
-            <div class="table-col prop_common">y</div>
-            <div class="table-col"><input></div>
-          </div>
-          <div class="table-row">
-            <div class="table-col prop_common">width</div>
-            <div class="table-col"><input></div>
-          </div>
-          <div class="table-row">
-            <div class="table-col prop_common">height</div>
-            <div class="table-col"><input></div>
-          </div>
-          <div class="table-row">
-            <div class="table-col prop_common">color</div>
-            <div class="table-col"><input><button class="circle-button remove"><i class="fa fa-times"></i></button></div>
-          </div>
+          <!--<div class="table-col"><input><button class="circle-button remove"><i class="fa fa-times"></i></button></div>-->
         </div>
 
         <button class="circle-button add"><i class="fa fa-plus"></i></button>
@@ -77,13 +53,13 @@
       <div class="sidebar-events">
         <div>Event Editor:</div>
 
-        <select name="events">
+        <select id="event-list">
           <option value="gameStart">Game Start</option>
           <option value="everyFrame">Every Frame</option>
           <option value="onCollision">On Collision</option>
         </select>
 
-        <textarea class="eventEditor"></textarea>
+        <textarea id="event-editor"></textarea>
       </div>
     </div>
   </body>
