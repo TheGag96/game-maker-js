@@ -10,6 +10,8 @@
     <link href="css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <script src="js/main.js"></script>
+    <script src="js/hooks.js"></script>
+    <script src="js/helper.js"></script>
   </head>
 
   <body>
@@ -20,14 +22,14 @@
     <div class="sidebar col">
       <div class="sidebar-header">
         <h1 class="center">KL Game Maker</h1>
-        <div class="center">v0.00</div>
+        <div class="center">v0.01</div>
       </div>
 
       <div class="sidebar-controls">
-        <button><i class="fa fa-file-o" aria-hidden="true"></i></button>
-        <button><i class="fa fa-folder-open-o" aria-hidden="true"></i></button>
-        <button><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-        <button><i class="fa fa-share-square-o" aria-hidden="true"></i></button>
+        <button id="file-new-button"><i class="fa fa-file-o" aria-hidden="true"></i></button>
+        <button id="file-open-button"><i class="fa fa-folder-open-o" aria-hidden="true"></i></button>
+        <button id="file-save-button"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+        <button id="file-export-button"><i class="fa fa-share-square-o" aria-hidden="true"></i></button>
       </div>
       
       <div class="sidebar-controls">
@@ -41,7 +43,7 @@
       </div>
 
       <div class="sidebar-properties">
-        <div>Properties:</div>
+        <h2>Properties:</h2>
 
         <div id="properties-table">
           <!--<div class="table-col"><input><button class="circle-button remove"><i class="fa fa-times"></i></button></div>-->
@@ -51,7 +53,7 @@
       </div>
         
       <div class="sidebar-events">
-        <div>Event Editor:</div>
+        <h2>Event Editor:</h2>
 
         <select id="event-list">
           <option value="gameStart">Game Start</option>
@@ -59,7 +61,15 @@
           <option value="onCollision">On Collision</option>
         </select>
 
-        <textarea id="event-editor"></textarea>
+        <div id="event-editor-container">
+          <div id="events-tabs" class="tab-view">
+          </div>
+
+          <textarea id="event-editor"></textarea>
+        
+          <button id="event-apply-button">Apply</button>
+        </div>
+
       </div>
     </div>
   </body>
