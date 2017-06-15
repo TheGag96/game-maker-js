@@ -2,6 +2,7 @@
 // Helper functions
 ////////
 
+var debounceTimeout = null;
 function updatePropertiesTable() {
   while (Editor.propertiesTable.lastElementChild !== null) {
     Editor.propertiesTable.lastElementChild.querySelectorAll("input")[0].removeEventListener("change", Hooks.onPropertyFieldChange);
@@ -11,7 +12,7 @@ function updatePropertiesTable() {
   if (Editor.selected === false) return;
 
   for (var key in Editor.selected) {
-    if (typeof Editor.selected[key] !== "function") {
+    if (typeof Editor.selected[key] !== "function" && !key.startsWith("__")) {
       var row = document.createElement("div");
       row.classList.add("table-row");
 
@@ -27,7 +28,16 @@ function updatePropertiesTable() {
       var editorField = document.createElement("input");
       editorField.value = Editor.selected[key];
       editorCol.appendChild(editorField);
-      editorField.addEventListener("change", Hooks.onPropertyFieldChange);
+      editorField.addEventListener("keydown", function(e) {
+        if (debounceTimeout) {
+          clearTimeout(debounceTimeout);
+          debounceTimeout = null;
+        }
+
+        debounceTimeout = setTimeout(function() {
+          Hooks.onPropertyFieldChange(e);
+        }, 50); 
+      });
       editorField.setAttribute("data-key", key);
       row.appendChild(editorCol);
 
@@ -42,13 +52,7 @@ function updateEventEditor() {
     return;
   }
 
-  var selectedEvent = eventFuncs[Editor.eventList.selectedIndex];
-
-  var funcString = ""+Editor.selected[selectedEvent];
-  var bodyBegin = funcString.indexOf("{")+2, bodyEnd = funcString.lastIndexOf("}")-1;
-  funcString = funcString.substring(bodyBegin, bodyEnd);
-
-  Editor.eventEditor.value = funcString;
+  Editor.eventEditor.value = Editor.selected[Editor.chosenEvent+"String"];
 }
 
 function updateKeyData() {

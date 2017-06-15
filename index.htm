@@ -26,6 +26,7 @@
       </div>
 
       <div class="sidebar-controls">
+        <input id="file-dialog" type="file" style="display: none;">
         <button id="file-new-button"><i class="fa fa-file-o" aria-hidden="true"></i></button>
         <button id="file-open-button"><i class="fa fa-folder-open-o" aria-hidden="true"></i></button>
         <button id="file-save-button"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
@@ -54,12 +55,6 @@
         
       <div class="sidebar-events">
         <h2>Event Editor:</h2>
-
-        <select id="event-list">
-          <option value="gameStart">Game Start</option>
-          <option value="everyFrame">Every Frame</option>
-          <option value="onCollision">On Collision</option>
-        </select>
 
         <div id="event-editor-container">
           <div id="events-tabs" class="tab-view">

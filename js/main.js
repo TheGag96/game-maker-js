@@ -9,7 +9,9 @@ var Editor = {
   lastMouse: null,
   gameRunning: false,
   propertiesTable: null,
-  eventList: null, eventEditor: null,
+  eventEditor: null,
+  chosenEvent: null,
+  fileDialog: null,
 
   addEntity: function(ent) {
     Editor.entityList.push(ent);
@@ -37,8 +39,8 @@ function main() {
   Game.canvas            = document.getElementById("field");
   Game.drawContext       = Game.canvas.getContext("2d");
   Editor.propertiesTable = document.getElementById("properties-table");
-  Editor.eventList       = document.getElementById("event-list");
   Editor.eventEditor     = document.getElementById("event-editor");
+  Editor.fileDialog      = document.getElementById("file-dialog");
 
   ////
   // Set up hooks 
@@ -57,12 +59,14 @@ function main() {
   document.getElementById("stop-button").addEventListener(  "click", Hooks.onStopButtonClick, false);
   document.getElementById("add-sprite-button").addEventListener("click", Hooks.onAddSpriteButtonClick, false);
   document.getElementById("remove-sprite-button").addEventListener("click", Hooks.onRemoveSpriteButtonClick, false);
-  document.getElementById("event-list").addEventListener("change", Hooks.onEventListChange, false);
-  document.getElementById("event-editor").addEventListener("change", Hooks.onEventEditorChange, false);
+  // document.getElementById("event-editor").addEventListener("change", Hooks.onEventEditorChange, false);
+  document.getElementById("event-apply-button").addEventListener("click", Hooks.onEventApplyButtonClick, false);
   document.getElementById("file-new-button").addEventListener("click", Hooks.onFileNewButtonClick, false);
   document.getElementById("file-open-button").addEventListener("click", Hooks.onFileOpenButton, false);
   document.getElementById("file-save-button").addEventListener("click", Hooks.onFileSaveButtonClick, false);
   document.getElementById("file-export-button").addEventListener("click", Hooks.onFileExportButtonClick, false);
+
+  Editor.fileDialog.addEventListener("change", Hooks.onFileDialogClose, false);
 
   window.addEventListener("resize", Hooks.onWindowResize, false);
   setInterval(Hooks.onUpdateCanvas, 1000/60);
@@ -70,21 +74,22 @@ function main() {
   //set up event editor tabs
 
   var eventTabs = document.getElementById("events-tabs");
+  Editor.chosenEvent = eventFuncs[0][0];
 
-  for (var i = 0; i < eventFuncs2.length; i++) {
+  for (var i = 0; i < eventFuncs.length; i++) {
     var newTabBtn = document.createElement("input");
     var newTabLbl = document.createElement("label");
 
     newTabBtn.name      = "events-tabs";
-    newTabBtn.value     = eventFuncs2[i][0];
-    newTabBtn.id        = "tab-btn" + eventFuncs2[i][0];
+    newTabBtn.value     = eventFuncs[i][0];
+    newTabBtn.id        = "tab-btn" + eventFuncs[i][0];
     newTabBtn.type      = "radio";
-    newTabBtn.addEventListener("click", Hooks.onEventTabClick, false);
     // newTabBtn.classList.add("tab-link");
     if (i == 0) newTabBtn.setAttribute("checked", "");
 
-    newTabLbl.for       = newTabBtn.id;
-    newTabLbl.innerText = eventFuncs2[i][1];
+    newTabLbl.setAttribute("for", newTabBtn.id);
+    newTabLbl.innerText = eventFuncs[i][1];
+    newTabLbl.addEventListener("click", Hooks.onEventTabClick, false);
 
     eventTabs.appendChild(newTabBtn);
     eventTabs.appendChild(newTabLbl);
@@ -172,6 +177,10 @@ var BaseEntity = function() {
   for (var key in commonProps) {
     this[key] = commonProps[key];
   }
+  
+  for (var i = 0; i < eventFuncs.length; i++) {
+    this[eventFuncs[i][0]+"String"] = "";
+  }
 };
 
 BaseEntity.prototype.__onUpdate = function(event) {
@@ -186,8 +195,7 @@ BaseEntity.prototype.__onGameStart = function(event) {
 
 };
 
-var eventFuncs = ["__onGameStart", "__onUpdate", "__onCollision"];
-var eventFuncs2 = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
+var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
 
 function moveAndCollideEntities() {
   var loopVar = [{comp:"x", velComp:"velX", dirs:["left", "right"]},

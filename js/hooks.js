@@ -204,25 +204,36 @@ var Hooks = {
     }
   },
 
-  onEventListChange: function(event) {
-    if (!Editor.selected) return;
-
-    updateEventEditor();
-  },
-
   onEventEditorChange: function(event) {
-    try {
-      var selectedEvent = eventFuncs[Editor.eventList.selectedIndex];
-      var func = new Function("event", Editor.eventEditor.value);
-      Editor.selected[selectedEvent] = func;
-    }
-    catch (e) {  }
+    // try {
+    //   var selectedEvent = eventFuncs[Editor.eventList.selectedIndex];
+    //   var func = new Function("event", Editor.eventEditor.value);
+    //   Editor.selected[selectedEvent] = func;
+    // }
+    // catch (e) {  }
 
-    updateEventEditor();
+    // updateEventEditor();
   },
 
   onEventTabClick: function(event) {
+    Editor.chosenEvent = event.target.getAttribute("for").substring("tab-btn".length);
+
+    updateEventEditor();
   },
+
+  onEventApplyButtonClick: function(event) {
+    try {
+      var func = new Function("event", Editor.eventEditor.value);
+      Editor.selected[Editor.chosenEvent] = func;
+      Editor.selected[Editor.chosenEvent + "String"] = Editor.eventEditor.value;
+      updateEventEditor();
+    }
+    catch (e) {
+      alert(e);
+    }
+  },
+
+  fileOperation: "",
 
   onFileNewButtonClick: function(event) {
     //msg box: clear everything and start over? yes/no
@@ -230,15 +241,55 @@ var Hooks = {
 
   onFileOpenButton: function(event) {
     //open file dialog
+    Editor.fileDialog.click(event);
   },
 
   onFileSaveButtonClick: function(event) {
-    //save file dialog, but only when no file has been saved yet
-    var data = JSON.stringify({entityList: Editor.entityList});
+    var data = new Blob([JSON.stringify({entityList: Editor.entityList})], { type: "application/json"});
 
+    var virtualLink = document.createElement("a");
+    virtualLink.setAttribute("download", "game.json");
+    virtualLink.href = URL.createObjectURL(data);
+
+    virtualLink.dispatchEvent(new MouseEvent("click"));
   },
 
   onFileExportButtonClick: function(event) {
     //save file dialog always
+  },
+
+  onFileDialogClose: function(event) {
+    //alias name for file dialog
+    var dialog = event.target;
+
+    //must have selected one file
+    if (dialog.files.length > 0) {
+      var reader = new FileReader();
+
+      //set hook for when reader reads
+      reader.onload = function() {
+        var data = JSON.parse(reader.result);
+
+        //for every entity, compile its functions and make sure they're BaseEntities;
+        for (var i = 0; i < data.entityList.length; i++) {
+          var ent = data.entityList[i];
+          ent.__proto__ = BaseEntity.prototype;
+
+          for (key in ent) {
+            if (key.startsWith("__")) {
+              //all function strings will be of the form __<FuncName>String
+              var memName = key.substring(0, key.lastIndexOf("String"));
+              var func = new Function("event", ent[key]);
+              ent[memName] = func;
+            }
+          }
+        }
+        
+        Editor.entityList = data.entityList;
+      };
+
+      //read the selected file
+      reader.readAsText(dialog.files[0]);
+    }
   }
 };
