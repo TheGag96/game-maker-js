@@ -49,26 +49,31 @@ function main() {
   Game.canvas.width = Game.canvas.parentElement.clientWidth;
   Game.canvas.height = Game.canvas.parentElement.clientHeight;
   
-  Game.canvas.addEventListener("mousedown", Hooks.onCanvasMouseDown, false);
-  Game.canvas.addEventListener("mouseup",   Hooks.onCanvasMouseUp, false);
-  Game.canvas.addEventListener("mousemove", Hooks.onCanvasMouseMove, false); 
-  Game.canvas.addEventListener("keydown",   Hooks.onCanvasKeyDown, false); 
-  Game.canvas.addEventListener("keyup",     Hooks.onCanvasKeyUp, false); 
+  Game.canvas.addEventListener("mousedown", Hooks.onCanvasMouseDown);
+  Game.canvas.addEventListener("mouseup",   Hooks.onCanvasMouseUp);
+  Game.canvas.addEventListener("mousemove", Hooks.onCanvasMouseMove); 
+  Game.canvas.addEventListener("keydown",   Hooks.onCanvasKeyDown); 
+  Game.canvas.addEventListener("keyup",     Hooks.onCanvasKeyUp); 
 
-  document.getElementById("play-pause-button").addEventListener("click", Hooks.onPlayPauseButtonClick, false);
-  document.getElementById("stop-button").addEventListener(  "click", Hooks.onStopButtonClick, false);
-  document.getElementById("add-sprite-button").addEventListener("click", Hooks.onAddSpriteButtonClick, false);
-  document.getElementById("remove-sprite-button").addEventListener("click", Hooks.onRemoveSpriteButtonClick, false);
-  // document.getElementById("event-editor").addEventListener("change", Hooks.onEventEditorChange, false);
-  document.getElementById("event-apply-button").addEventListener("click", Hooks.onEventApplyButtonClick, false);
-  document.getElementById("file-new-button").addEventListener("click", Hooks.onFileNewButtonClick, false);
-  document.getElementById("file-open-button").addEventListener("click", Hooks.onFileOpenButton, false);
-  document.getElementById("file-save-button").addEventListener("click", Hooks.onFileSaveButtonClick, false);
-  document.getElementById("file-export-button").addEventListener("click", Hooks.onFileExportButtonClick, false);
+  document.getElementById("play-pause-button").addEventListener("click", Hooks.onPlayPauseButtonClick);
+  document.getElementById("stop-button").addEventListener("click", Hooks.onStopButtonClick);
+  document.getElementById("add-sprite-button").addEventListener("click", Hooks.onAddSpriteButtonClick);
+  document.getElementById("remove-sprite-button").addEventListener("click", Hooks.onRemoveSpriteButtonClick);
+  // document.getElementById("event-editor").addEventListener("change", Hooks.onEventEditorChange);
+  document.getElementById("event-apply-button").addEventListener("click", Hooks.onEventApplyButtonClick);
+  document.getElementById("file-new-button").addEventListener("click", Hooks.onFileNewButtonClick);
+  document.getElementById("file-open-button").addEventListener("click", Hooks.onFileOpenButton);
+  document.getElementById("file-save-button").addEventListener("click", Hooks.onFileSaveButtonClick);
+  document.getElementById("file-export-button").addEventListener("click", Hooks.onFileExportButtonClick);
 
-  Editor.fileDialog.addEventListener("change", Hooks.onFileDialogClose, false);
+  window.addEventListener("beforeunload", function(event) {
+    event.returnValue = "Any unsaved progress will be lost. Are you sure you want to leave?";
+    return event.returnValue;
+  });
 
-  window.addEventListener("resize", Hooks.onWindowResize, false);
+  Editor.fileDialog.addEventListener("change", Hooks.onFileDialogClose);
+
+  window.addEventListener("resize", Hooks.onWindowResize);
   setInterval(Hooks.onUpdateCanvas, 1000/60);
   
   //set up event editor tabs
@@ -89,31 +94,11 @@ function main() {
 
     newTabLbl.setAttribute("for", newTabBtn.id);
     newTabLbl.innerText = eventFuncs[i][1];
-    newTabLbl.addEventListener("click", Hooks.onEventTabClick, false);
+    newTabLbl.addEventListener("click", Hooks.onEventTabClick);
 
     eventTabs.appendChild(newTabBtn);
     eventTabs.appendChild(newTabLbl);
   }
-
-  //test stuff
-
-  var someBox = new BaseEntity();
-  someBox.x = 5;
-  someBox.y = 2;
-  someBox.width = 200;
-  someBox.height = 100;
-  someBox.color = "rgba(255, 0, 0, 1)";
-  someBox.priority = 10;
-
-  var anotherbox = new BaseEntity();
-  anotherbox.x = 100;
-  anotherbox.y = 2;
-  anotherbox.width = 200;
-  anotherbox.height = 100;
-  anotherbox.color = "rgba(0, 0, 255, 1)";
-
-  Editor.addEntity(someBox);
-  Editor.addEntity(anotherbox);
 }
 
 ////////
@@ -135,7 +120,7 @@ var Game = {
   recalcPriority: function() {
     setTimeout(function() {
       Game.entityList.sort(function(a, b) {
-        return a.priority - b.priority
+        return a.priority - b.priority;
       });
     }, 0);
   },
@@ -145,6 +130,7 @@ var Game = {
 
     isHeld: function(key) {
       key = resolveKeyID(key);
+
       if (!(key in Game.Controls.keyData)) {
         return false;  
       }
@@ -153,6 +139,7 @@ var Game = {
 
     isHeldOneFrame: function(key) {
       key = resolveKeyID(key);
+      
       if (!(key in Game.Controls.keyData)) {
         return false;  
       }
@@ -170,14 +157,16 @@ var commonProps = {
   width: 25, height: 25,
   velX: 0, velY: 0,
   color: "rgba(0, 0, 0, 1)",
-  priority: 1
+  priority: 1,
+  blockedUp: false, blockedDown: false, blockedLeft: false, blockedRight: false,
+  prevX: 0, prevY: 0
 }
 
 var BaseEntity = function() {
   for (var key in commonProps) {
     this[key] = commonProps[key];
   }
-  
+
   for (var i = 0; i < eventFuncs.length; i++) {
     this[eventFuncs[i][0]+"String"] = "";
   }
@@ -198,16 +187,28 @@ BaseEntity.prototype.__onGameStart = function(event) {
 var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
 
 function moveAndCollideEntities() {
-  var loopVar = [{comp:"x", velComp:"velX", dirs:["left", "right"]},
-                 {comp:"y", velComp:"velY", dirs:["up", "down"]}];
+  var loopVar = [{comp:"x", velComp:"velX", prevComp:"prevX", dirs:["left", "right"]},
+                 {comp:"y", velComp:"velY", prevComp:"prevY", dirs:["up", "down"]}];
+
+  for (var i = 0; i < Game.entityList.length; i++) {
+    var ent = Game.entityList[i]; 
+    ent.blockedUp    = false;
+    ent.blockedDown  = false;
+    ent.blockedLeft  = false;
+    ent.blockedRight = false;
+  }
 
   for (var z = 0; z < loopVar.length; z++) {
-    comp    = loopVar[z].comp;
-    velComp = loopVar[z].velComp;
-    dirs    = loopVar[z].dirs;
+    comp     = loopVar[z].comp;
+    prevComp = loopVar[z].prevCompvelComp;
+    velComp  = loopVar[z].velComp;
+    dirs     = loopVar[z].dirs;
 
     for (var i = 0; i < Game.entityList.length; i++) {
-      Game.entityList[i][comp] += Game.entityList[i][velComp] / 60 * 10;
+      var ent = Game.entityList[i]; 
+      
+      ent[prevComp] = ent[comp];
+      ent[comp]    += Game.entityList[i][velComp] / 60 * 10;
     }
 
     for (var a = 0; a < Game.entityList.length; a++) {
@@ -215,16 +216,16 @@ function moveAndCollideEntities() {
         var entA = Game.entityList[a], entB = Game.entityList[b];
 
         if (boxIntersection(entA, entB)) {
-          entAEvent = {
+          var entAEvent = {
             other: entB,
             direction: dirs[0]
           }
 
-          entBEvent = {
+          var entBEvent = {
             other: entA,
             direction: dirs[1]
           }
-          
+
           if (entA[velComp] - entB[velComp] >= 0) {
             entAEvent.direction = dirs[1];
             entBEvent.direction = dirs[0];
@@ -248,4 +249,4 @@ function drawEntity(ent) {
 // Finally, set window Hooks.onload hook
 ////////
 
-window.addEventListener("load", main, false);
+window.addEventListener("load", main);

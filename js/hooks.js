@@ -121,7 +121,7 @@ var Hooks = {
 
   handleKeyEvent: function(event, isHeldDown) {
     var key = String.fromCharCode(event.which);
-    if (!(event.which in Game.Controls.keyData)) {
+    if (!(key in Game.Controls.keyData)) {
       Game.Controls.keyData[key] = {pressed: isHeldDown, wasPressed: false};
     }
     else {
@@ -187,17 +187,30 @@ var Hooks = {
   },
 
   onRemoveSpriteButtonClick: function(event) {
-    if (Editor.gameRunning) return;
+    if (Editor.gameRunning || !Editor.selected) return;
 
+    Editor.entityList.splice(Editor.entityList.indexOf(Editor.selected), 1);
+    Editor.selected = false;
+    Editor.dragging = false;
   },
 
   onPropertyFieldChange: function(event) {
     var toChange = event.target.getAttribute("data-key");
 
-    if (toChange in commonProps && typeof Editor.selected[toChange] === "number") {
+    if (typeof Editor.selected[toChange] === "number") {
       var casted = +event.target.value;
 
       if (casted !== NaN) Editor.selected[toChange] = casted;
+    }
+    else if (typeof Editor.selected[toChange] === "boolean") {
+      var casted = event.target.value.trim().toLowerCase();
+
+      if (casted == "true" || casted == "1") {
+        Editor.selected[toChange] = true;
+      }
+      else {
+        Editor.selected[toChange] = false;
+      }
     }
     else {
       Editor.selected[toChange] = event.target.value;
