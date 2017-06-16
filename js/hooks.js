@@ -1,18 +1,24 @@
-////////
-// Webpage event hooks
-////////
+/***********************
+ * Webpage event hooks *
+ ***********************/
 
 var Hooks = {
+  /**
+   * Handles main game loop and drawing. Runs 60 times per second.
+   **/
   onUpdateCanvas: function() {
+    //clear screen
     Game.drawContext.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
     if (Editor.gameRunning) {
+      //run first frame entity code if it's the start
       if (Game.firstFrame) {
         for (var i = 0; i < Game.entityList.length; i++) {
           Game.entityList[i].__onGameStart();
         }
       }
 
+      //if we aren't paused, update, move, and collide all entities
       if (!Game.paused) {
         for (var i = 0; i < Game.entityList.length; i++) {
           Game.entityList[i].__onUpdate();
@@ -21,17 +27,22 @@ var Hooks = {
         moveAndCollideEntities();
       }
 
+      //draw them all
       for (var i = 0; i < Game.entityList.length; i++) {
         drawEntity(Game.entityList[i]);
       }
 
+      //update whether or not keys were pressed last frame
+      //(allows isHeldOneFrame() to work)
       updateKeyData();
 
       Game.firstFrame = false;
     }
     else {
+      //draw all entities as well as a translucent box around them
       for (var i = 0; i < Editor.entityList.length; i++) {
         drawEntity(Editor.entityList[i]);
+        
         Game.drawContext.beginPath();
         Game.drawContext.strokeStyle = "rgba(0,0,0,0.5)";
         Game.drawContext.lineWidth = 2;
@@ -39,6 +50,7 @@ var Hooks = {
         Game.drawContext.stroke();
       }
 
+      //draw a gold outline around the selected entity on top of everything for visibility
       if (Editor.selected) {
         Game.drawContext.beginPath();
         Game.drawContext.strokeStyle = "#FFD700";
@@ -49,22 +61,27 @@ var Hooks = {
     }
   },
 
+  /**
+   * Handle mouse down events:
+   *   - Selecting an entity
+   *   - Beginning to drag an entity
+   **/
   onCanvasMouseDown: function(event) {
     if (Editor.gameRunning) return;
-    if (event.button != 0) return; //change if i add right click features
+    if (event.button != 0)  return; //change if i add right click features
 
     mouse = {x: event.pageX, y: event.pageY};
 
     var alreadySelected   = Editor.selected;
     var selectedSomething = false;
 
+    //check through every entity and see if we're clicking on it
     for (var i = Editor.entityList.length-1; i >= 0; i--) {
       if (pointInBox(mouse, Editor.entityList[i])) {
         Editor.dragging  = Editor.entityList[i];
         Editor.lastMouse = mouse;
-
-        if (alreadySelected === Editor.entityList[i]) alreadySelected = true;
-        else                                          alreadySelected = false;
+        
+        alreadySelected = (alreadySelected === Editor.entityList[i]);
         
         selectedSomething = true;
 
@@ -75,18 +92,27 @@ var Hooks = {
 
     if (!selectedSomething) Editor.selected = false;
 
+    //we don't need to update our UI if the user clicks the same thing we've already selected
+    //however, we still do if we selected nothing
     if (alreadySelected === false || Editor.selected === false) {
       updatePropertiesTable();
       updateEventEditor();
     }
 
+    //save last mouse position so that it can be used to detect dragging
     Editor.lastMouse = mouse;
   },
 
+  /**
+   * If the user releases the mouse, they are no longer dragging an entity
+   **/
   onCanvasMouseUp: function(event) {
     Editor.dragging = false;
   },
 
+  /**
+   * At the moment, this hook only handles dragging entities around the canvas.
+   **/
   onCanvasMouseMove: function(event) {
     if (Editor.gameRunning) return;
     
@@ -111,29 +137,47 @@ var Hooks = {
     Editor.lastMouse = mouse;
   },
 
+  /**
+   * Handle key down events
+   **/
   onCanvasKeyDown: function(event) {
     Hooks.handleKeyEvent(event, true);
   },
 
+  /**
+   * Handle key up events
+   **/
   onCanvasKeyUp: function(event) {
     Hooks.handleKeyEvent(event, false);
   },
 
+  /**
+   * Function merging the handling of key up and key down events.
+   * The engine wraps these such that a user can simply poll whether or not a key was pressed whenever they want.
+   **/
   handleKeyEvent: function(event, isHeldDown) {
-    var key = String.fromCharCode(event.which);
-    if (!(key in Game.Controls.keyData)) {
-      Game.Controls.keyData[key] = {pressed: isHeldDown, wasPressed: false};
+    if (!(event.which in Game.Controls.keyData)) {
+      Game.Controls.keyData[event.which] = {pressed: isHeldDown, wasPressed: false};
     }
     else {
-      Game.Controls.keyData[key].pressed = isHeldDown;
+      Game.Controls.keyData[event.which].pressed = isHeldDown;
     }
   },
 
+  /**
+   * Resize the canvas so that it always properly fills the screen space available
+   **/
   onWindowResize: function(event) {
     Game.canvas.width = Game.canvas.parentElement.clientWidth;
     Game.canvas.height = Game.canvas.parentElement.clientHeight;
   },
 
+  /**
+   * When clicked, this button will either:
+   *   - Begin the game if it's not running
+   *   - Pause the game if it is running
+   *   - Unpause the game if it's running and paused
+   **/
   onPlayPauseButtonClick: function(event) {
     var playButtonLabelData = document.getElementById("play-pause-button").firstElementChild.classList;
     
@@ -154,6 +198,8 @@ var Hooks = {
       Game.firstFrame = true;
       Game.entityList = [];
 
+      //copy each entity and push it onto the Game object's entity list
+      //this way, we can restore the original states before starting the game
       for (var i = 0; i < Editor.entityList.length; i++) {
         var ent = Editor.entityList[i];
         var copied = new BaseEntity();
@@ -173,6 +219,10 @@ var Hooks = {
     }
   },
 
+  /**
+   * Stop the game if it's running.
+   * All sprites will appear to snap back to their original states before starting (handled by main game loop).
+   **/
   onStopButtonClick: function(event) {
     Editor.gameRunning = false;
     Game.paused = false;
@@ -181,11 +231,34 @@ var Hooks = {
     playButtonLabelData.add("fa-play");
   },
 
+  /**
+   * Add a new sprite with default properties to the center of the screen.
+   **/
   onAddSpriteButtonClick: function(event) {
     if (Editor.gameRunning) return;
-    Editor.entityList.push(new BaseEntity());
+    
+    var newOne = new BaseEntity();
+
+    newOne.x = Game.canvas.width/2;
+    newOne.y = Game.canvas.height/2;
+
+    Editor.entityList.push(newOne);
   },
 
+  /**
+   * Duplciate the currently selected sprite.
+   **/
+  onDuplicateSpriteButtonClick: function(event) {
+    if (!Editor.selected) return;
+
+    var newEnt = makeRealEntity(Editor.selected);
+
+    Editor.entityList.push(newEnt);
+  },
+
+  /**
+   * Remove the currently selected sprite.
+   **/
   onRemoveSpriteButtonClick: function(event) {
     if (Editor.gameRunning || !Editor.selected) return;
 
@@ -194,6 +267,10 @@ var Hooks = {
     Editor.dragging = false;
   },
 
+  /**
+   * Updates the currently selected Entity's property changed from the properties table.
+   * Called by the debounce function to make the property change almost instantly as the user is typing.
+   **/
   onPropertyFieldChange: function(event) {
     var toChange = event.target.getAttribute("data-key");
 
@@ -217,23 +294,16 @@ var Hooks = {
     }
   },
 
-  onEventEditorChange: function(event) {
-    // try {
-    //   var selectedEvent = eventFuncs[Editor.eventList.selectedIndex];
-    //   var func = new Function("event", Editor.eventEditor.value);
-    //   Editor.selected[selectedEvent] = func;
-    // }
-    // catch (e) {  }
-
-    // updateEventEditor();
-  },
-
   onEventTabClick: function(event) {
     Editor.chosenEvent = event.target.getAttribute("for").substring("tab-btn".length);
 
     updateEventEditor();
   },
 
+  /**
+   * Try to compile a function with the code in the event editor box.
+   * If there's a syntax error, a popup will come up and neither the function member or its text member will change.
+   **/
   onEventApplyButtonClick: function(event) {
     try {
       var func = new Function("event", Editor.eventEditor.value);
@@ -246,20 +316,44 @@ var Hooks = {
     }
   },
 
-  fileOperation: "",
-
+  /**
+   * Prompt the user if they really want to delete everything, and then do so
+   **/
   onFileNewButtonClick: function(event) {
-    //msg box: clear everything and start over? yes/no
+    if (!confirm("This will clear everything. Did you save your work?")) return;
+
+    Editor.entityList = [];
+    Editor.selected = false;
+    updatePropertiesTable();
+    updateEventEditor();
   },
 
+  /**
+   * Show a file dialog for opening up a game project
+   **/
   onFileOpenButton: function(event) {
     //open file dialog
     Editor.fileDialog.click(event);
   },
 
+  /**
+   * Download a file describing the game project in the JSON format.
+   * Each entity's GUID gets removed, as that stuff shouldn't be saved with the project.
+   * This means new ones will be created when the project is loaded back up again
+   **/
   onFileSaveButtonClick: function(event) {
-    var data = new Blob([JSON.stringify({entityList: Editor.entityList})], { type: "application/json"});
+    var out = {entityList: []};
 
+    //copy each entity so that we can remove their GUIDs
+    for (var i = 0; i < Editor.entityList.length; i++) {
+      var copied = makeRealEntity(Editor.entityList[i]);
+      delete copied.__guid;
+      out.entityList.push(copied);
+    }
+
+    var data = new Blob([JSON.stringify(out)], { type: "application/json"});
+
+    //hackily download the file by spoofing a click event to an invisible link
     var virtualLink = document.createElement("a");
     virtualLink.setAttribute("download", "game.json");
     virtualLink.href = URL.createObjectURL(data);
@@ -268,9 +362,12 @@ var Hooks = {
   },
 
   onFileExportButtonClick: function(event) {
-    //save file dialog always
+    //TODO
   },
 
+  /**
+   * Called after the dialog opened through the open button closes
+   **/ 
   onFileDialogClose: function(event) {
     //alias name for file dialog
     var dialog = event.target;
@@ -283,22 +380,17 @@ var Hooks = {
       reader.onload = function() {
         var data = JSON.parse(reader.result);
 
+        Editor.entityList = [];
+
         //for every entity, compile its functions and make sure they're BaseEntities;
         for (var i = 0; i < data.entityList.length; i++) {
-          var ent = data.entityList[i];
-          ent.__proto__ = BaseEntity.prototype;
-
-          for (key in ent) {
-            if (key.startsWith("__")) {
-              //all function strings will be of the form __<FuncName>String
-              var memName = key.substring(0, key.lastIndexOf("String"));
-              var func = new Function("event", ent[key]);
-              ent[memName] = func;
-            }
-          }
+          Editor.entityList.push(makeRealEntity(data.entityList[i]));
         }
         
-        Editor.entityList = data.entityList;
+        //reset some editor stuff
+        Editor.selected = false;
+        updatePropertiesTable();
+        updateEventEditor();
       };
 
       //read the selected file
