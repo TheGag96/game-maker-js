@@ -29,7 +29,7 @@ var Hooks = {
 
       //draw them all
       for (var i = 0; i < Game.entityList.length; i++) {
-        drawEntity(Game.entityList[i]);
+        Game.entityList[i].__draw();
       }
 
       //update whether or not keys were pressed last frame
@@ -41,7 +41,7 @@ var Hooks = {
     else {
       //draw all entities as well as a translucent box around them
       for (var i = 0; i < Editor.entityList.length; i++) {
-        drawEntity(Editor.entityList[i]);
+        Editor.entityList[i].__draw();
         
         Game.drawContext.beginPath();
         Game.drawContext.strokeStyle = "rgba(0,0,0,0.5)";
@@ -59,6 +59,8 @@ var Hooks = {
         Game.drawContext.stroke();
       }
     }
+
+    requestAnimationFrame(Hooks.onUpdateCanvas);
   },
 
   /**
@@ -142,6 +144,11 @@ var Hooks = {
    **/
   onCanvasKeyDown: function(event) {
     Hooks.handleKeyEvent(event, true);
+    
+    if (event.which == Keys.delete) {
+      event.preventDefault();
+      Hooks.onRemoveSpriteButtonClick(event);
+    }
   },
 
   /**
@@ -170,6 +177,24 @@ var Hooks = {
   onWindowResize: function(event) {
     Game.canvas.width = Game.canvas.parentElement.clientWidth;
     Game.canvas.height = Game.canvas.parentElement.clientHeight;
+  },
+
+  /**
+   * Intercept application-wide keyboard shortcut events
+   **/
+  onWindowKeyDown: function(event) {
+    if (event.which == Keys.s && event.ctrlKey) {
+      event.preventDefault();
+      Hooks.onFileSaveButtonClick(event);
+    }
+    else if (event.which == Keys.o && event.ctrlKey) {
+      event.preventDefault();
+      Hooks.onFileOpenButtonClick(event);
+    }
+    else if (event.which == Keys.d && event.ctrlKey) {
+      event.preventDefault();
+      Hooks.onDuplicateSpriteButtonClick(event);
+    }
   },
 
   /**
@@ -215,6 +240,7 @@ var Hooks = {
 
       playButtonLabelData.remove("fa-play");
       playButtonLabelData.add("fa-pause");
+      Editor.eventEditor.updateOptions({readOnly: true});
       Editor.gameRunning = true;
     }
   },
@@ -229,6 +255,7 @@ var Hooks = {
     var playButtonLabelData = document.getElementById("play-pause-button").firstElementChild.classList;
     playButtonLabelData.remove("fa-pause");
     playButtonLabelData.add("fa-play");
+    Editor.eventEditor.updateOptions({readOnly: false});
   },
 
   /**
@@ -294,6 +321,9 @@ var Hooks = {
     }
   },
 
+  /**
+   * Switches the event editor tabs. 
+   **/
   onEventTabClick: function(event) {
     Editor.chosenEvent = event.target.getAttribute("for").substring("tab-btn".length);
 
@@ -306,13 +336,23 @@ var Hooks = {
    **/
   onEventApplyButtonClick: function(event) {
     try {
-      var func = new Function("event", Editor.eventEditor.value);
+      var func = new Function("event", Editor.eventEditor.getValue());
       Editor.selected[Editor.chosenEvent] = func;
-      Editor.selected[Editor.chosenEvent + "String"] = Editor.eventEditor.value;
+      Editor.selected[Editor.chosenEvent + "String"] = Editor.eventEditor.getValue();
       updateEventEditor();
     }
     catch (e) {
       alert(e);
+    }
+  },
+
+  /**
+   * Allows pressing tab to insert two spaces into the event editor.
+   **/
+  onEventEditorKeyDown: function(event) {
+    if (event.which == Keys.tab) {
+      event.target.insert()
+      event.preventDefault();
     }
   },
 
@@ -331,7 +371,7 @@ var Hooks = {
   /**
    * Show a file dialog for opening up a game project
    **/
-  onFileOpenButton: function(event) {
+  onFileOpenButtonClick: function(event) {
     //open file dialog
     Editor.fileDialog.click(event);
   },
@@ -379,7 +419,6 @@ var Hooks = {
       //set hook for when reader reads
       reader.onload = function() {
         var data = JSON.parse(reader.result);
-
         Editor.entityList = [];
 
         //for every entity, compile its functions and make sure they're BaseEntities;
@@ -395,6 +434,7 @@ var Hooks = {
 
       //read the selected file
       reader.readAsText(dialog.files[0]);
+      Editor.fileDialog.value = null;
     }
   }
 };

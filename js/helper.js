@@ -61,11 +61,11 @@ function updatePropertiesTable() {
  **/
 function updateEventEditor() {
   if (!Editor.selected) {
-    Editor.eventEditor.value = "";
+    Editor.eventEditor.setValue("");
     return;
   }
 
-  Editor.eventEditor.value = Editor.selected[Editor.chosenEvent+"String"];
+  Editor.eventEditor.setValue(Editor.selected[Editor.chosenEvent+"String"]);
 }
 
 
@@ -85,7 +85,6 @@ function updateKeyData() {
 function pointInBox(point, box) {
   return point.x > box.x && point.x < box.x+box.width && point.y > box.y && point.y < box.y+box.height;
 }
-
 
 /**
  * Returns true if two boxes {x, y, width, height} are inside each other, but not simply touching at an edge.

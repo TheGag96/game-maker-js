@@ -9,6 +9,7 @@
     <!--<link rel="stylesheet" type="text/css" href="css/reset.css">-->
     <!--<link href="css/font-awesome.min.css" rel="stylesheet">-->
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script src="monaco-editor/min/vs/loader.js"></script>
     <script src="js/main.js"></script>
     <script src="js/keys.js"></script>
     <script src="js/hooks.js"></script>
@@ -62,12 +63,19 @@
           <div id="events-tabs" class="tab-view">
           </div>
 
-          <textarea id="event-editor"></textarea>
+          <div id="event-editor"></div>
         
           <button id="event-apply-button">Apply</button>
         </div>
 
       </div>
     </div>
+
+    <script>
+      require.config({ paths: { 'vs': 'monaco-editor/min/vs' }});
+      require(['vs/editor/editor.main'], function() {
+        main();
+      });
+    </script>
   </body>
 </html>

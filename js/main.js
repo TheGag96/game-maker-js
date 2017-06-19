@@ -62,15 +62,27 @@ function main() {
   Game.canvas            = document.getElementById("field");
   Game.drawContext       = Game.canvas.getContext("2d");
   Editor.propertiesTable = document.getElementById("properties-table");
-  Editor.eventEditor     = document.getElementById("event-editor");
+  // Editor.eventEditor     = document.getElementById("event-editor");
   Editor.fileDialog      = document.getElementById("file-dialog");
+
+  Game.canvas.width  = Game.canvas.parentElement.clientWidth;
+  Game.canvas.height = Game.canvas.parentElement.clientHeight;
+  
+  Game.drawContext.textBaseline = "top";
+
+  require.config({ paths: { 'vs': 'monaco-editor/min/vs' }});
+  Editor.eventEditor = monaco.editor.create(document.getElementById('event-editor'), {
+    value: "",
+    language: "javascript",
+    fontFamily: "Inconsolata-g for Powerline",
+    lineNumbers: false,
+    fontSize: 13,
+  });
+  Editor.eventEditor.getModel().updateOptions({tabSize: 2});
 
   ////
   // Set up hooks 
   ////
-
-  Game.canvas.width = Game.canvas.parentElement.clientWidth;
-  Game.canvas.height = Game.canvas.parentElement.clientHeight;
   
   Game.canvas.addEventListener("mousedown", Hooks.onCanvasMouseDown);
   Game.canvas.addEventListener("mouseup",   Hooks.onCanvasMouseUp);
@@ -85,7 +97,7 @@ function main() {
   document.getElementById("remove-sprite-button").addEventListener("click", Hooks.onRemoveSpriteButtonClick);
   document.getElementById("event-apply-button").addEventListener("click", Hooks.onEventApplyButtonClick);
   document.getElementById("file-new-button").addEventListener("click", Hooks.onFileNewButtonClick);
-  document.getElementById("file-open-button").addEventListener("click", Hooks.onFileOpenButton);
+  document.getElementById("file-open-button").addEventListener("click", Hooks.onFileOpenButtonClick);
   document.getElementById("file-save-button").addEventListener("click", Hooks.onFileSaveButtonClick);
   document.getElementById("file-export-button").addEventListener("click", Hooks.onFileExportButtonClick);
 
@@ -98,11 +110,13 @@ function main() {
   Editor.fileDialog.addEventListener("change", Hooks.onFileDialogClose);
 
   window.addEventListener("resize", Hooks.onWindowResize);
-  setInterval(Hooks.onUpdateCanvas, 1000/60);
+  window.addEventListener("keydown", Hooks.onWindowKeyDown);
+
+  Hooks.onUpdateCanvas();
   
   //set up event editor tabs
 
-  var eventTabs = document.getElementById("events-tabs");
+  var eventTabs      = document.getElementById("events-tabs");
   Editor.chosenEvent = eventFuncs[0][0];
 
   for (var i = 0; i < eventFuncs.length; i++) {
@@ -191,7 +205,6 @@ var Game = {
      * Returns whether the player is holding a key.
      * Can take a string describing the key (see keys.js) or the integer keycode.
      **/
-
     isHeld: function(key) {
       if (typeof key !== "number") key = Keys[key];
 
@@ -235,8 +248,17 @@ var commonProps = {
   //velocity
   velX: 0, velY: 0,
   
+  //how the entity will be drawn ("rectangle", "text", "oval")
+  displayType: "rectangle",
+
   //color the entity will be drawn
   color: "rgba(0, 0, 0, 1)",
+
+  //the text written when displayType == "text"
+  text: "",
+
+  //the font string used when displayType == "text"
+  font: "12pt Arial",
 
   //higher means it will be drawn on top of other objects
   priority: 1,
@@ -262,6 +284,7 @@ var BaseEntity = function() {
     this[key] = commonProps[key];
   }
 
+  //event functions are also stored as strings containing their code
   for (var i = 0; i < eventFuncs.length; i++) {
     this[eventFuncs[i][0]+"String"] = "";
   }
@@ -290,6 +313,30 @@ BaseEntity.prototype.__onUpdate = function(event) { };
  * }
  **/
 BaseEntity.prototype.__onCollision = function(event) { };
+
+/**
+ * Draws an entity (currently a rectangle filled with their color property) 
+ */
+BaseEntity.prototype.__draw = function() {
+  Game.drawContext.fillStyle = this.color;
+  
+  if (this.displayType == "rectangle") {
+    Game.drawContext.fillRect(this.x, this.y, this.width, this.height);
+  }
+  else if (this.displayType == "text") {
+    Game.drawContext.font = this.font;
+    Game.drawContext.fillText(this.text, this.x, this.y);
+  }
+  else if (this.displayType == "oval") {
+    Game.drawContext.save();
+    Game.drawContext.translate(this.x+this.width/2, this.y+this.height/2);
+    Game.drawContext.scale(this.width, this.height);
+    Game.drawContext.beginPath();
+    Game.drawContext.arc(0, 0, 0.5, 0, 2*Math.PI, false);
+    Game.drawContext.fill();
+    Game.drawContext.restore();
+  }
+};
 
 
 /**
@@ -357,7 +404,6 @@ function moveAndCollideEntities() {
             entBEvent.direction = dirs[0];
           }
 
-          //trigger collision events
           entA.__onCollision(entAEvent);
           entB.__onCollision(entBEvent);
         }
@@ -366,16 +412,8 @@ function moveAndCollideEntities() {
   }
 }
 
-/**
- * Draws an entity (currently a rectangle filled with their color property) 
- */
-function drawEntity(ent) {
-  Game.drawContext.fillStyle = ent.color;
-  Game.drawContext.fillRect(ent.x, ent.y, ent.width, ent.height);
-};
-
 /*****************************************
  * Finally, set window Hooks.onload hook *
  *****************************************/
 
-window.addEventListener("load", main);
+// window.addEventListener("load", main);
