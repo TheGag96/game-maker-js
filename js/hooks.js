@@ -21,7 +21,16 @@ var Hooks = {
       //if we aren't paused, update, move, and collide all entities
       if (!Game.paused) {
         for (var i = 0; i < Game.entityList.length; i++) {
-          Game.entityList[i].__onUpdate();
+          var ent = Game.entityList[i];
+
+          if (!ent.__removeFlag) {
+            Game.entityList[i].__onUpdate();
+          }
+
+          if (ent.__removeFlag) {
+            Game.entityList.splice(i, 1);
+            i--;
+          }
         }
 
         moveAndCollideEntities();
@@ -240,7 +249,6 @@ var Hooks = {
 
       playButtonLabelData.remove("fa-play");
       playButtonLabelData.add("fa-pause");
-      Editor.eventEditor.updateOptions({readOnly: true});
       Editor.gameRunning = true;
     }
   },
@@ -255,7 +263,10 @@ var Hooks = {
     var playButtonLabelData = document.getElementById("play-pause-button").firstElementChild.classList;
     playButtonLabelData.remove("fa-pause");
     playButtonLabelData.add("fa-play");
-    Editor.eventEditor.updateOptions({readOnly: false});
+    
+    //restore old timing functions
+    // window.setTimeout  = window.oldSetTimeout; 
+    // window.setInterval = window.oldSetInterval; 
   },
 
   /**
@@ -360,7 +371,7 @@ var Hooks = {
    * Prompt the user if they really want to delete everything, and then do so
    **/
   onFileNewButtonClick: function(event) {
-    if (!confirm("This will clear everything. Did you save your work?")) return;
+    if (Editor.gameRunning || !confirm("This will clear everything. Did you save your work?")) return;
 
     Editor.entityList = [];
     Editor.selected = false;
@@ -372,6 +383,7 @@ var Hooks = {
    * Show a file dialog for opening up a game project
    **/
   onFileOpenButtonClick: function(event) {
+    if (Editor.gameRunning) return;
     //open file dialog
     Editor.fileDialog.click(event);
   },

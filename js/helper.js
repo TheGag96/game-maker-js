@@ -120,8 +120,8 @@ function makeRealEntity(ent) {
 
     if (key.startsWith("__on") && key.endsWith("String")) {
       //all function strings will be of the form __<FuncName>String
-      var memName = key.substring(0, key.lastIndexOf("String"));
-      var func = new Function("event", ent[key]);
+      var memName     = key.substring(0, key.lastIndexOf("String"));
+      var func        = new Function("event", ent[key]);
       result[memName] = func;
     }
     
@@ -130,3 +130,24 @@ function makeRealEntity(ent) {
 
   return result;
 }
+
+/**
+ * Binds an entity to the timing functions so that "this" can be used within them as expected
+ **/
+// function configureAsync(ent) {
+//   window.setTimeout = (function(entity) { 
+//     return function(fn, ms) { 
+//       window.oldSetTimeout(function(){ 
+//           fn.bind(entity);
+//       }, ms);		
+//     };
+//   }(ent));
+
+//   window.setInterval = (function(entity) { 
+//     return function(fn, ms) { 
+//       window.oldSetInterval(function(){ 
+//           fn.bind(entity);
+//       }, ms);		
+//     };
+//   }(ent));
+// }

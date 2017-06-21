@@ -70,15 +70,19 @@ function main() {
   
   Game.drawContext.textBaseline = "top";
 
-  require.config({ paths: { 'vs': 'monaco-editor/min/vs' }});
   Editor.eventEditor = monaco.editor.create(document.getElementById('event-editor'), {
     value: "",
     language: "javascript",
-    fontFamily: "Inconsolata-g for Powerline",
+    fontFamily: "Inconsolata-g",
     lineNumbers: false,
     fontSize: 13,
   });
   Editor.eventEditor.getModel().updateOptions({tabSize: 2});
+  
+  enableAutocompletion({
+    "this": new BaseEntity(),
+    "Game": Game
+  });
 
   ////
   // Set up hooks 
@@ -269,11 +273,11 @@ var commonProps = {
   //stores the previous position (note: in __onUpdate(), these will be the same as x and y)
   prevX: 0, prevY: 0,
 
-  //whether or not to remove the entity after the next __onUpdate()
-  removeFlag: false,
-
   //whether or not collision checks are run for this entity
-  collides: true
+  collides: true,
+
+  //internal flag for removing this entity at/after the next __onUpdate()
+  __removeFlag: false,
 }
 
 /****
@@ -338,6 +342,19 @@ BaseEntity.prototype.__draw = function() {
   }
 };
 
+/**
+ * Sets an entity's remove flag. Will be removed before or after the entity updates next
+ **/
+BaseEntity.prototype.remove = function() {
+  __removeFlag = true;
+}
+
+/**
+ * Returns whether or not an entity is removed from the game world
+ **/
+BaseEntity.prototype.isRemoved = function() {
+  return __removeFlag;
+}
 
 /**
  * List of all event functions editable by the user as well as their display names.
@@ -355,8 +372,8 @@ var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"]
  * Entities with collides=false will not be checked for collision.
  **/
 function moveAndCollideEntities() {
-  var loopVar = [{comp:"x", velComp:"velX", prevComp:"prevX", dirs:["left", "right"]},
-                 {comp:"y", velComp:"velY", prevComp:"prevY", dirs:["up", "down"]}];
+  var loopVar = [{comp:"x", velComp:"velX", prevComp:"prevX", sizeComp: "width", dirs:["left", "right"]},
+                 {comp:"y", velComp:"velY", prevComp:"prevY", sizeComp: "height", dirs:["up", "down"]}];
 
   for (var i = 0; i < Game.entityList.length; i++) {
     var ent = Game.entityList[i]; 
@@ -371,6 +388,7 @@ function moveAndCollideEntities() {
     comp     = loopVar[z].comp;
     prevComp = loopVar[z].prevCompvelComp;
     velComp  = loopVar[z].velComp;
+    sizeComp = loopVar[z].sizeComp;
     dirs     = loopVar[z].dirs;
 
     for (var i = 0; i < Game.entityList.length; i++) {
@@ -381,13 +399,27 @@ function moveAndCollideEntities() {
     }
 
     for (var a = 0; a < Game.entityList.length; a++) {
-      if (!Game.entityList[a].collides) continue;
+      var entA = Game.entityList[a];
+      
+      if (!entA.collides) continue;
+      
+      //set up custom bounding boxes using previous and current positions to account for high entity speeds
+      var bboxA = {x: entA.x, y: entA.y, width: entA.width, height: entA.height};
+
+      bboxA[comp]     = Math.min(entA[comp], entA[prevComp]);
+      bboxA[sizeComp] = Math.abs(entA[prevComp]-entA[comp]) + entA[sizeComp];
 
       for (var b = a+1; b < Game.entityList.length; b++) {
-        var entA = Game.entityList[a], entB = Game.entityList[b];
-        if (!entB.collides) continue;
+        var entB = Game.entityList[b];
 
-        if (boxIntersection(entA, entB)) {
+        if (!entB.collides) continue;
+        
+        var bboxB = {x: entB.x, y: entB.y, width: entB.width, height: entB.height};
+
+        bboxB[comp]     = Math.min(entB[comp], entB[prevComp]);
+        bboxB[sizeComp] = Math.abs(entB[prevComp]-entB[comp]) + entB[sizeComp];
+
+        if (boxIntersection(bboxA, bboxB)) {
           var entAEvent = {
             other: entB,
             direction: dirs[0]
