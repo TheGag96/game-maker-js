@@ -1,1 +1,16 @@
-{}
+{
+  "compilerOptions": {
+    "rootDir": "js",
+    "target": "es5",
+    "module": "amd"
+  },
+
+  "files": [
+    "js/typings.d.ts"
+  ],
+
+  "compileOnSave": true,
+  "typeAcquisition": {
+    "enable": true
+  }
+}

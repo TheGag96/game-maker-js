@@ -1,7 +1,7 @@
 /****
  * Object containing names for basically every usable keyboard key. 
  ****/
-var Keys = {
+export var Keys = {
   a: 65,
   b: 66,
   c: 67,

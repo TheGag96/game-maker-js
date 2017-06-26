@@ -1,3 +1,6 @@
+import {Collision, CollisionType} from "./collision"
+import {Keys}                     from "./keys"
+
 enum State {
   stopped = 1,
   running,
@@ -15,7 +18,7 @@ export class GameRunner {
 
   //reference to canvas being drawn to
   canvas: HTMLCanvasElement;
-  private drawContext: CanvasRenderingContext2D;
+  drawContext: CanvasRenderingContext2D;
 
   //object containing 
   controls: Controls = new Controls();
@@ -25,7 +28,12 @@ export class GameRunner {
    **/
   constructor(canvas: HTMLCanvasElement) {
     this.canvas      = canvas;
-    this.drawContext = canvas.getContext("2D") as CanvasRenderingContext2D;
+    this.drawContext = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+    canvas.width  = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+
+    this.drawContext.textBaseline = "top";
   }
 
   /**
@@ -39,7 +47,7 @@ export class GameRunner {
 
     //run first frame entity code if it's the start
     for (var i = 0; i < this.entityList.length; i++) {
-      this.entityList[i].__onGameStart();
+      this.entityList[i].__onGameStart(null);
     }
   }
 
@@ -96,7 +104,7 @@ export class GameRunner {
         var ent = this.entityList[i];
 
         if (!ent.__removeFlag) {
-          this.entityList[i].__onUpdate();
+          this.entityList[i].__onUpdate(null);
         }
 
         if (ent.__removeFlag) {
@@ -105,12 +113,12 @@ export class GameRunner {
         }
       }
 
-      moveAndCollideEntities();
+      this.moveAndCollideEntities();
     }
 
     //draw them all
     for (let ent of this.entityList) {
-      this.entityList[i].__draw();
+      ent.__draw(this.drawContext);
     }
 
     //update whether or not keys were pressed last frame
@@ -132,8 +140,9 @@ export class GameRunner {
    * Sort entityList in ascending order based on their priority property.
    **/
   recalcPriority() {
+    let list = this.entityList;
     setTimeout(function() {
-      this.entityList.sort(function(a, b) {
+      list.sort(function(a, b) {
         return a.priority - b.priority;
       });
     }, 0);
@@ -164,8 +173,7 @@ export class GameRunner {
     var loopVar = [{comp:"x", velComp:"velX", prevComp:"prevX", sizeComp: "width", dirs:["left", "right"]},
                   {comp:"y", velComp:"velY", prevComp:"prevY", sizeComp: "height", dirs:["up", "down"]}];
 
-    for (var i = 0; i < Game.entityList.length; i++) {
-      var ent = Game.entityList[i]; 
+    for (let ent of this.entityList) {
       ent.blockedUp    = false;
       ent.blockedDown  = false;
       ent.blockedLeft  = false;
@@ -180,35 +188,24 @@ export class GameRunner {
       let sizeComp = loopVar[z].sizeComp;
       let dirs     = loopVar[z].dirs;
 
-      for (var i = 0; i < Game.entityList.length; i++) {
-        var ent = Game.entityList[i]; 
-        
+      for (let ent of this.entityList) {
         ent[prevComp] = ent[comp];
-        ent[comp]    += Game.entityList[i][velComp] / 60 * 10;
+        ent[comp]    += ent[velComp] / 60 * 10;
+
+        ent.__recalculateCollisionBounds(loopVar[z]);        
       }
 
-      for (var a = 0; a < Game.entityList.length; a++) {
-        var entA = Game.entityList[a];
+      for (var a = 0; a < this.entityList.length; a++) {
+        var entA = this.entityList[a];
         
         if (!entA.collides) continue;
         
-        //set up custom bounding boxes using previous and current positions to account for high entity speeds
-        var bboxA = {x: entA.x, y: entA.y, width: entA.width, height: entA.height};
-
-        bboxA[comp]     = Math.min(entA[comp], entA[prevComp]);
-        bboxA[sizeComp] = Math.abs(entA[prevComp]-entA[comp]) + entA[sizeComp];
-
-        for (var b = a+1; b < Game.entityList.length; b++) {
-          var entB = Game.entityList[b];
+        for (var b = a+1; b < this.entityList.length; b++) {
+          var entB = this.entityList[b];
 
           if (!entB.collides) continue;
           
-          var bboxB = {x: entB.x, y: entB.y, width: entB.width, height: entB.height};
-
-          bboxB[comp]     = Math.min(entB[comp], entB[prevComp]);
-          bboxB[sizeComp] = Math.abs(entB[prevComp]-entB[comp]) + entB[sizeComp];
-
-          if (boxIntersection(bboxA, bboxB)) {
+          if (Collision.testCollision(entA.__getCollisionBounds(), entB.__getCollisionBounds())) {
             var entAEvent = {
               other: entB,
               direction: dirs[0]
@@ -227,6 +224,9 @@ export class GameRunner {
 
             entA.__onCollision(entAEvent);
             entB.__onCollision(entBEvent);
+
+            entA.__recalculateCollisionBounds(loopVar[z]);
+            entB.__recalculateCollisionBounds(loopVar[z]);
           }
         }
       }
@@ -250,7 +250,7 @@ class Controls {
     if (!(key in this.keyData)) {
       return false;  
     }
-    else return this..keyData[key].pressed;
+    else return this.keyData[key].pressed;
   }
 
   /**
@@ -278,4 +278,18 @@ class Controls {
       data.wasPressed = data.pressed;
     }
   }
+
+  /**
+   * Function merging the handling of key up and key down events.
+   * The engine wraps these such that a user can simply poll whether or not a key was pressed whenever they want.
+   **/
+  handleKeyEvent(event, isHeldDown) {
+    if (!(event.which in this.keyData)) {
+      this.keyData[event.which] = {pressed: isHeldDown, wasPressed: false};
+    }
+    else {
+      this.keyData[event.which].pressed = isHeldDown;
+    }
+  }
+
 }

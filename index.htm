@@ -6,16 +6,8 @@
     <title></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!--<link rel="stylesheet" type="text/css" href="css/reset.css">-->
-    <!--<link href="css/font-awesome.min.css" rel="stylesheet">-->
     <link rel="stylesheet" type="text/css" href="css/style.css">
-    <script src="lib/monaco-editor/min/vs/loader.js"></script>
-    <script src="lib/knockout-3.4.2.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/keys.js"></script>
-    <script src="js/hooks.js"></script>
-    <script src="js/helper.js"></script>
-    <script src="js/completions.js"></script>
+    <script data-main="js/require-config.js" src="js/lib/require.js"></script>
   </head>
 
   <body>
@@ -72,12 +64,5 @@
 
       </div>
     </div>
-
-    <script>
-      require.config({ paths: { 'vs': 'lib/monaco-editor/min/vs' }});
-      require(['vs/editor/editor.main'], function() {
-        main();
-      });
-    </script>
   </body>
 </html>

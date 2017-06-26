@@ -1,369 +1,480 @@
-/**********************
- * Editor app globals *
- **********************/
-var Editor = {
-    //holds the entities viewable when editing
-    entityList: [],
-    //set to the current entity being dragged, false otherwise
-    dragging: null,
-    //set to the currently selected entity, false otherwise
-    selected: null,
-    //last position of the mouse {x, y}
-    lastMouse: null,
-    //whether or not the game is running
-    gameRunning: false,
-    //reference to the properties table element on the page
-    propertiesTable: null,
-    //reference to the event editor element on the page
-    eventEditor: null,
-    //name of the event function currently being edited 
-    chosenEvent: null,
-    //reference to the file dialog element on the page
-    fileDialog: null,
-    /**
-     * Adds an entity to the game world and reorders all entities based on their priority property
-     **/
-    addEntity: function (ent) {
-        Editor.entityList.push(ent);
-        Editor.recalcPriority();
-    },
-    /**
-     * Sort entityList in ascending order based on their priority property.
-     **/
-    recalcPriority: function () {
-        setTimeout(function () {
-            Editor.entityList.sort(function (a, b) {
-                return a.priority - b.priority;
-            });
-        }, 0);
+define(["require", "exports", "./game", "./editor", "./keys", "./entity"], function (require, exports, game_1, editor_1, keys_1, entity_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**********************
+     * App globals *
+     **********************/
+    var editor;
+    var game;
+    /*****************
+     * Main function *
+     *****************/
+    function main() {
+        var canvas = document.getElementById("field");
+        editor = new editor_1.Editor(canvas);
+        game = new game_1.GameRunner(canvas);
+        window.game = game;
+        Shell.init(canvas);
     }
-};
-/*****************
- * Main function *
- *****************/
-function main() {
-    ////
-    // Retrieve/set some globals
-    ////
-    Game.canvas = document.getElementById("field");
-    Game.drawContext = Game.canvas.getContext("2d");
-    Editor.propertiesTable = document.getElementById("properties-table");
-    // Editor.eventEditor     = document.getElementById("event-editor");
-    Editor.fileDialog = document.getElementById("file-dialog");
-    Game.canvas.width = Game.canvas.parentElement.clientWidth;
-    Game.canvas.height = Game.canvas.parentElement.clientHeight;
-    Game.drawContext.textBaseline = "top";
-    Editor.eventEditor = monaco.editor.create(document.getElementById('event-editor'), {
-        value: "",
-        language: "javascript",
-        fontFamily: "Inconsolata-g",
-        lineNumbers: "off",
-        fontSize: 13
-    });
-    Editor.eventEditor.getModel().updateOptions({ tabSize: 2 });
-    showAutocompletion({
-        "this": new BaseEntity(),
-        "Game": Game
-    });
-    ////
-    // Set up hooks 
-    ////
-    Game.canvas.addEventListener("mousedown", Hooks.onCanvasMouseDown);
-    Game.canvas.addEventListener("mouseup", Hooks.onCanvasMouseUp);
-    Game.canvas.addEventListener("mousemove", Hooks.onCanvasMouseMove);
-    Game.canvas.addEventListener("keydown", Hooks.onCanvasKeyDown);
-    Game.canvas.addEventListener("keyup", Hooks.onCanvasKeyUp);
-    document.getElementById("play-pause-button").addEventListener("click", Hooks.onPlayPauseButtonClick);
-    document.getElementById("stop-button").addEventListener("click", Hooks.onStopButtonClick);
-    document.getElementById("add-sprite-button").addEventListener("click", Hooks.onAddSpriteButtonClick);
-    document.getElementById("duplicate-sprite-button").addEventListener("click", Hooks.onDuplicateSpriteButtonClick);
-    document.getElementById("remove-sprite-button").addEventListener("click", Hooks.onRemoveSpriteButtonClick);
-    document.getElementById("event-apply-button").addEventListener("click", Hooks.onEventApplyButtonClick);
-    document.getElementById("file-new-button").addEventListener("click", Hooks.onFileNewButtonClick);
-    document.getElementById("file-open-button").addEventListener("click", Hooks.onFileOpenButtonClick);
-    document.getElementById("file-save-button").addEventListener("click", Hooks.onFileSaveButtonClick);
-    document.getElementById("file-export-button").addEventListener("click", Hooks.onFileExportButtonClick);
-    //warn users about leaving the page
-    window.addEventListener("beforeunload", function (event) {
-        event.returnValue = "Any unsaved progress will be lost. Are you sure you want to leave?";
-        return event.returnValue;
-    });
-    Editor.fileDialog.addEventListener("change", Hooks.onFileDialogClose);
-    window.addEventListener("resize", Hooks.onWindowResize);
-    window.addEventListener("keydown", Hooks.onWindowKeyDown);
-    Hooks.onUpdateCanvas();
-    //set up event editor tabs
-    var eventTabs = document.getElementById("events-tabs");
-    Editor.chosenEvent = eventFuncs[0][0];
-    for (var i = 0; i < eventFuncs.length; i++) {
-        var newTabBtn = document.createElement("input");
-        var newTabLbl = document.createElement("label");
-        //the actual button of the radio button becomes invisible
-        newTabBtn.name = "events-tabs";
-        newTabBtn.value = eventFuncs[i][0];
-        newTabBtn.id = "tab-btn" + eventFuncs[i][0];
-        newTabBtn.type = "radio";
-        // newTabBtn.classList.add("tab-link");
-        if (i == 0)
-            newTabBtn.setAttribute("checked", "");
-        //the label is the thing that's clickable
-        newTabLbl.setAttribute("for", newTabBtn.id);
-        newTabLbl.innerText = eventFuncs[i][1];
-        newTabLbl.addEventListener("click", Hooks.onEventTabClick);
-        eventTabs.appendChild(newTabBtn);
-        eventTabs.appendChild(newTabLbl);
-    }
-}
-/*********************
- * Game object stuff *
- *********************/
-/****
- * Holds all relevant data about the running game as well as helper functions for the user.
- ****/
-var Game = {
-    //the canvas used to draw everything on the page as well as its draw context
-    canvas: null, drawContext: null,
-    //stores all entities in the game world
-    entityList: [],
-    //whether or not the game is paused
-    paused: false,
-    //whether or not it's the first frame of the game
-    firstFrame: false,
-    //will eventually describe the position of the camera to allow scrolling
-    // camera: {x:0, y:0},
+    exports.main = main;
     /**
-     * Adds an entity to the game world and reorders all entities based on their priority property
+     * List of all event functions editable by the user as well as their display names.
      **/
-    addEntity: function (ent) {
-        Game.entityList.push(ent);
-        Game.recalcPriority();
-    },
-    /**
-     * Sort entityList in ascending order based on their priority property.
-     **/
-    recalcPriority: function () {
-        setTimeout(function () {
-            Game.entityList.sort(function (a, b) {
-                return a.priority - b.priority;
-            });
-        }, 0);
-    },
-    /**
-     * Get an entity in the world by its name in O(n) time.
-     **/
-    getEntityByName: function (s) {
-        for (var i = 0; i < Game.entityList.length; i++) {
-            if (Game.entityList[i].name === s)
-                return Game.entityList[i];
-        }
-        return null;
-    },
-    /**
-     * Holds user functions relating to input.
-     **/
-    Controls: {
-        //populates with data of the form {pressed, wasPressed} as each new key is pressed for the first time
-        keyData: {},
+    var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
+    /*************************
+     * Main Shell handling code *
+     *************************/
+    var Shell;
+    (function (Shell) {
+        //reference to canvas being drawn to
+        var canvas;
+        //reference to the properties table element on the page
+        var propertiesTable = null;
+        //reference to the event Shell element on the page
+        var eventEditor = null;
+        //name of the event function currently being edited 
+        var chosenEvent = "__onGameStart";
+        //reference to the file dialog element on the page
+        var fileDialog = null;
         /**
-         * Returns whether the player is holding a key.
-         * Can take a string describing the key (see keys.js) or the integer keycode.
+         * Constructor for Shell object.
+         * Sets many globals and binds event callbacks to itself.
          **/
-        isHeld: function (key) {
-            if (typeof key !== "number")
-                key = Keys[key];
-            if (!(key in Game.Controls.keyData)) {
-                return false;
+        function init(canvas) {
+            ////
+            // Retrieve/set some components
+            ////
+            canvas = canvas;
+            propertiesTable = document.getElementById("properties-table");
+            fileDialog = document.getElementById("file-dialog");
+            eventEditor = monaco.editor.create(document.getElementById('event-editor'), {
+                value: "",
+                language: "javascript",
+                fontFamily: "Inconsolata-g",
+                lineNumbers: "off",
+                fontSize: 13,
+            });
+            eventEditor.getModel().updateOptions({ tabSize: 2 });
+            // showAutocompletion({
+            //   "Shell": new BaseEntity(),
+            //   "game": game
+            // });
+            ////
+            // Set up Shell event callbacks
+            ////
+            canvas.addEventListener("mousedown", onCanvasMouseDown);
+            canvas.addEventListener("mouseup", onCanvasMouseUp);
+            canvas.addEventListener("mousemove", onCanvasMouseMove);
+            canvas.addEventListener("keydown", onCanvasKeyDown);
+            canvas.addEventListener("keyup", onCanvasKeyUp);
+            fileDialog.addEventListener("change", onFileDialogClose);
+            function addEventToElement(name, event, callback) {
+                document.getElementById(name).addEventListener(event, callback);
             }
+            addEventToElement("play-pause-button", "click", onPlayPauseButtonClick);
+            addEventToElement("stop-button", "click", onStopButtonClick);
+            addEventToElement("add-sprite-button", "click", onAddSpriteButtonClick);
+            addEventToElement("duplicate-sprite-button", "click", onDuplicateSpriteButtonClick);
+            addEventToElement("remove-sprite-button", "click", onRemoveSpriteButtonClick);
+            addEventToElement("event-apply-button", "click", onEventApplyButtonClick);
+            addEventToElement("file-new-button", "click", onFileNewButtonClick);
+            addEventToElement("file-open-button", "click", onFileOpenButtonClick);
+            addEventToElement("file-save-button", "click", onFileSaveButtonClick);
+            addEventToElement("file-export-button", "click", onFileExportButtonClick);
+            //warn users about leaving the page
+            window.addEventListener("beforeunload", function (event) {
+                event.returnValue = "Any unsaved progress will be lost. Are you sure you want to leave?";
+                return event.returnValue;
+            });
+            window.addEventListener("resize", onWindowResize);
+            window.addEventListener("keydown", onWindowKeyDown);
+            //set up event editor tabs
+            var eventTabs = document.getElementById("events-tabs");
+            chosenEvent = eventFuncs[0][0];
+            for (var i = 0; i < eventFuncs.length; i++) {
+                var newTabBtn = document.createElement("input");
+                var newTabLbl = document.createElement("label");
+                //the actual button of the radio button becomes invisible
+                newTabBtn.name = "events-tabs";
+                newTabBtn.value = eventFuncs[i][0];
+                newTabBtn.id = "tab-btn" + eventFuncs[i][0];
+                newTabBtn.type = "radio";
+                if (i == 0)
+                    newTabBtn.setAttribute("checked", "");
+                //the label is the thing that's clickable
+                newTabLbl.setAttribute("for", newTabBtn.id);
+                newTabLbl.innerText = eventFuncs[i][1];
+                newTabLbl.addEventListener("click", onEventTabClick);
+                eventTabs.appendChild(newTabBtn);
+                eventTabs.appendChild(newTabLbl);
+            }
+            //we're ready to go!
+            requestAnimationFrame(onUpdateCanvas);
+        }
+        Shell.init = init;
+        /**
+         * Handles main game loop and drawing. Runs 60 times per second.
+         **/
+        function onUpdateCanvas() {
+            //clear screen
+            game.drawContext.clearRect(0, 0, game.canvas.width, game.canvas.height);
+            if (game.isRunning())
+                game.step();
             else
-                return Game.Controls.keyData[key].pressed;
-        },
+                editor.step();
+            // console.log("wut");
+            requestAnimationFrame(onUpdateCanvas);
+        }
         /**
-         * Returns whether the player just pressed a key this frame.
-         * Can take a string describing the key (see keys.js) or the integer keycode.
+         * Handle mouse down events on canvas (delegates to editor)
          **/
-        isHeldOneFrame: function (key) {
-            if (typeof key !== "number")
-                key = Keys[key];
-            if (!(key in Game.Controls.keyData)) {
-                return false;
-            }
-            else {
-                var data = Game.Controls.keyData[key];
-                return data.pressed && !data.wasPressed;
+        function onCanvasMouseDown(event) {
+            if (game.isRunning())
+                return;
+            if (event.button != 0)
+                return; //change if i add right click features
+            var lastSelected = editor.selected;
+            editor.onMouseDown(event);
+            //we don't need to update our Shell if the user clicks the same thing we've already selected
+            //however, we still do if we selected nothing
+            if (lastSelected != editor.selected) {
+                updatePropertiesTable();
+                updateEventEditor();
             }
         }
-    }
-};
-/****
- * The default property settings all entities will be created with
- ***/
-var commonProps = {
-    //entity name
-    name: "",
-    //position
-    x: 0, y: 0,
-    //size
-    width: 25, height: 25,
-    //velocity
-    velX: 0, velY: 0,
-    //how the entity will be drawn ("rectangle", "text", "oval")
-    displayType: "rectangle",
-    //color the entity will be drawn
-    color: "rgba(0, 0, 0, 1)",
-    //the text written when displayType == "text"
-    text: "",
-    //the font string used when displayType == "text"
-    font: "12pt Arial",
-    //higher means it will be drawn on top of other objects
-    priority: 1,
-    //whether or not the entity is being blocked by another (should be set manually through collision)
-    blockedUp: false, blockedDown: false, blockedLeft: false, blockedRight: false,
-    //stores the previous position (note: in __onUpdate(), these will be the same as x and y)
-    prevX: 0, prevY: 0,
-    //whether or not collision checks are run for this entity
-    collides: true,
-    //internal flag for removing this entity at/after the next __onUpdate()
-    __removeFlag: false
-};
-/****
- * Base class for an entity in the game world.
- ****/
-var BaseEntity = function () {
-    for (var key in commonProps) {
-        this[key] = commonProps[key];
-    }
-    //event functions are also stored as strings containing their code
-    for (var i = 0; i < eventFuncs.length; i++) {
-        this[eventFuncs[i][0] + "String"] = "";
-    }
-    this.__guid = generateGUID();
-};
-/**
- * Runs every frame.
- * Event spec: null
- **/
-BaseEntity.prototype.__onGameStart = function (event) { };
-/**
- * Runs every frame.
- * Event spec: null
- **/
-BaseEntity.prototype.__onUpdate = function (event) { };
-/**
- * Runs when the entity collides with another one.
- * Event spec:
- * {
- *   other:     the entity being collided with
- *   direction: the direction the collision is coming from ("up", "down", "left", "right")
- * }
- **/
-BaseEntity.prototype.__onCollision = function (event) { };
-/**
- * Draws an entity (currently a rectangle filled with their color property)
- */
-BaseEntity.prototype.__draw = function () {
-    Game.drawContext.fillStyle = this.color;
-    if (this.displayType == "rectangle") {
-        Game.drawContext.fillRect(this.x, this.y, this.width, this.height);
-    }
-    else if (this.displayType == "text") {
-        Game.drawContext.font = this.font;
-        Game.drawContext.fillText(this.text, this.x, this.y);
-    }
-    else if (this.displayType == "oval") {
-        Game.drawContext.save();
-        Game.drawContext.translate(this.x + this.width / 2, this.y + this.height / 2);
-        Game.drawContext.scale(this.width, this.height);
-        Game.drawContext.beginPath();
-        Game.drawContext.arc(0, 0, 0.5, 0, 2 * Math.PI, false);
-        Game.drawContext.fill();
-        Game.drawContext.restore();
-    }
-};
-/**
- * Sets an entity's remove flag. Will be removed before or after the entity updates next
- **/
-BaseEntity.prototype.remove = function () {
-    this.__removeFlag = true;
-};
-/**
- * Returns whether or not an entity is removed from the game world
- **/
-BaseEntity.prototype.isRemoved = function () {
-    return this.__removeFlag;
-};
-/**
- * List of all event functions editable by the user as well as their display names.
- **/
-var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
-/**
- * Handle the moving and colliding of all entities in the game world.
- *   0) reset all blocked properties to false
- *   1) update all entity x positions based on their velX
- *   2) check all entity collisions in the x direction, triggering their event hooks
- *   3) update all entity y positions based on their velY
- *   4) check all entity collisions in the y direction, triggering their event hooks
- *
- * Entities with collides=false will not be checked for collision.
- **/
-function moveAndCollideEntities() {
-    var loopVar = [{ comp: "x", velComp: "velX", prevComp: "prevX", sizeComp: "width", dirs: ["left", "right"] },
-        { comp: "y", velComp: "velY", prevComp: "prevY", sizeComp: "height", dirs: ["up", "down"] }];
-    for (var i = 0; i < Game.entityList.length; i++) {
-        var ent = Game.entityList[i];
-        ent.blockedUp = false;
-        ent.blockedDown = false;
-        ent.blockedLeft = false;
-        ent.blockedRight = false;
-    }
-    //for generality's sake, do x collisions then y collisions by looping
-    for (var z = 0; z < loopVar.length; z++) {
-        var comp = loopVar[z].comp;
-        var prevComp = loopVar[z].prevComp;
-        var velComp = loopVar[z].velComp;
-        var sizeComp = loopVar[z].sizeComp;
-        var dirs = loopVar[z].dirs;
-        for (var i = 0; i < Game.entityList.length; i++) {
-            var ent = Game.entityList[i];
-            ent[prevComp] = ent[comp];
-            ent[comp] += Game.entityList[i][velComp] / 60 * 10;
+        /**
+         * Handle mouse up on canvas
+         **/
+        function onCanvasMouseUp(event) {
+            editor.onMouseUp(event);
         }
-        for (var a = 0; a < Game.entityList.length; a++) {
-            var entA = Game.entityList[a];
-            if (!entA.collides)
-                continue;
-            //set up custom bounding boxes using previous and current positions to account for high entity speeds
-            var bboxA = { x: entA.x, y: entA.y, width: entA.width, height: entA.height };
-            bboxA[comp] = Math.min(entA[comp], entA[prevComp]);
-            bboxA[sizeComp] = Math.abs(entA[prevComp] - entA[comp]) + entA[sizeComp];
-            for (var b = a + 1; b < Game.entityList.length; b++) {
-                var entB = Game.entityList[b];
-                if (!entB.collides)
-                    continue;
-                var bboxB = { x: entB.x, y: entB.y, width: entB.width, height: entB.height };
-                bboxB[comp] = Math.min(entB[comp], entB[prevComp]);
-                bboxB[sizeComp] = Math.abs(entB[prevComp] - entB[comp]) + entB[sizeComp];
-                if (boxIntersection(bboxA, bboxB)) {
-                    var entAEvent = {
-                        other: entB,
-                        direction: dirs[0]
-                    };
-                    var entBEvent = {
-                        other: entA,
-                        direction: dirs[1]
-                    };
-                    //switch direction of collision based on velocity difference
-                    if (entA[velComp] - entB[velComp] >= 0) {
-                        entAEvent.direction = dirs[1];
-                        entBEvent.direction = dirs[0];
+        /**
+         * Handle mouse move on canvas.
+         **/
+        function onCanvasMouseMove(event) {
+            if (game.isRunning())
+                return;
+            editor.onMouseMove(event);
+            if (editor.dragging) {
+                var rowList = propertiesTable.childNodes;
+                for (var i = 0; i < rowList.length; i++) {
+                    var row = rowList[i];
+                    if (row.tagName !== undefined && row.tagName.toLowerCase() === "div") {
+                        var propName = row.firstElementChild.innerText;
+                        if (propName == "x" || propName == "y") {
+                            row.lastElementChild.querySelectorAll("input")[0].value = "" + editor.dragging[propName];
+                        }
                     }
-                    entA.__onCollision(entAEvent);
-                    entB.__onCollision(entBEvent);
                 }
             }
         }
-    }
-}
-/*****************************************
- * Finally, set window Hooks.onload hook *
- *****************************************/
-// window.addEventListener("load", main); 
+        /**
+         * Handle key down events
+         **/
+        function onCanvasKeyDown(event) {
+            game.controls.handleKeyEvent(event, true);
+            if (event.which == keys_1.Keys.delete) {
+                event.preventDefault();
+                onRemoveSpriteButtonClick(event);
+            }
+        }
+        /**
+         * Handle key up events
+         **/
+        function onCanvasKeyUp(event) {
+            game.controls.handleKeyEvent(event, false);
+        }
+        /**
+         * Resize the canvas so that it always properly fills the screen space available
+         **/
+        function onWindowResize(event) {
+            game.canvas.width = game.canvas.parentElement.clientWidth;
+            game.canvas.height = game.canvas.parentElement.clientHeight;
+        }
+        /**
+         * Intercept application-wide keyboard shortcut events
+         **/
+        function onWindowKeyDown(event) {
+            if (event.which == keys_1.Keys.s && event.ctrlKey) {
+                event.preventDefault();
+                onFileSaveButtonClick(event);
+            }
+            else if (event.which == keys_1.Keys.o && event.ctrlKey) {
+                event.preventDefault();
+                onFileOpenButtonClick(event);
+            }
+            else if (event.which == keys_1.Keys.d && event.ctrlKey) {
+                event.preventDefault();
+                onDuplicateSpriteButtonClick(event);
+            }
+        }
+        /**
+         * When clicked, Shell button will either:
+         *   - Begin the game if it's not running
+         *   - Pause the game if it is running
+         *   - Unpause the game if it's running and paused
+         **/
+        function onPlayPauseButtonClick(event) {
+            var playButtonLabelData = document.getElementById("play-pause-button").firstElementChild.classList;
+            if (game.isRunning()) {
+                game.pause();
+                playButtonLabelData.remove("fa-pause");
+                playButtonLabelData.add("fa-play");
+            }
+            else if (game.isPaused()) {
+                game.unpause();
+                playButtonLabelData.remove("fa-play");
+                playButtonLabelData.add("fa-pause");
+            }
+            else {
+                game.firstFrame = true;
+                var newEntityList = [];
+                //copy each entity and push it onto the game object's entity list
+                //Shell way, we can restore the original states before starting the game
+                for (var _i = 0, _a = editor.entityList; _i < _a.length; _i++) {
+                    var ent = _a[_i];
+                    var copied = new entity_1.Entity();
+                    for (var val in ent) {
+                        copied[val] = ent[val];
+                    }
+                    newEntityList.push(copied);
+                }
+                playButtonLabelData.remove("fa-play");
+                playButtonLabelData.add("fa-pause");
+                game.start(newEntityList);
+                game.recalcPriority();
+            }
+        }
+        /**
+         * Stop the game if it's running.
+         * All sprites will appear to snap back to their original states before starting (handled by main game loop).
+         **/
+        function onStopButtonClick(event) {
+            game.stop();
+            var playButtonLabelData = document.getElementById("play-pause-button").firstElementChild.classList;
+            playButtonLabelData.remove("fa-pause");
+            playButtonLabelData.add("fa-play");
+        }
+        /**
+         * Add a new sprite with default properties to the center of the screen.
+         **/
+        function onAddSpriteButtonClick(event) {
+            if (game.isRunning())
+                return;
+            var newOne = new entity_1.Entity();
+            newOne.x = game.canvas.width / 2;
+            newOne.y = game.canvas.height / 2;
+            editor.entityList.push(newOne);
+        }
+        /**
+         * Duplciate the currently selected sprite.
+         **/
+        function onDuplicateSpriteButtonClick(event) {
+            if (!editor.selected)
+                return;
+            var newEnt = makeRealEntity(editor.selected);
+            editor.entityList.push(newEnt);
+        }
+        /**
+         * Remove the currently selected sprite.
+         **/
+        function onRemoveSpriteButtonClick(event) {
+            if (!game.isStopped() || !editor.selected)
+                return;
+            editor.entityList.splice(editor.entityList.indexOf(editor.selected), 1);
+            editor.selected = null;
+            editor.dragging = null;
+        }
+        /**
+         * Updates the currently selected Entity's property changed from the properties table.
+         * Called by the debounce function to make the property change almost instantly as the user is typing.
+         **/
+        function onPropertyFieldChange(event) {
+            var toChange = event.target.getAttribute("data-key");
+            if (typeof editor.selected[toChange] === "number") {
+                var toNum = +event.target.value;
+                if (toNum !== NaN)
+                    editor.selected[toChange] = toNum;
+            }
+            else if (typeof editor.selected[toChange] === "boolean") {
+                var toBoolStr = event.target.value.trim().toLowerCase();
+                if (toBoolStr == "true" || toBoolStr == "1") {
+                    editor.selected[toChange] = true;
+                }
+                else {
+                    editor.selected[toChange] = false;
+                }
+            }
+            else {
+                editor.selected[toChange] = event.target.value;
+            }
+        }
+        /**
+         * Switches the event editor tabs.
+         **/
+        function onEventTabClick(event) {
+            chosenEvent = event.target.getAttribute("for").substring("tab-btn".length);
+            updateEventEditor();
+        }
+        /**
+         * Try to compile a function with the code in the event editor box.
+         * If there's a syntax error, a popup will come up and neither the function member or its text member will change.
+         **/
+        function onEventApplyButtonClick(event) {
+            try {
+                var func = new Function("event", eventEditor.getValue());
+                editor.selected[chosenEvent] = func;
+                editor.selected[chosenEvent + "String"] = eventEditor.getValue();
+                updateEventEditor();
+            }
+            catch (e) {
+                alert(e);
+            }
+        }
+        /**
+         * Prompt the user if they really want to delete everything, and then do so
+         **/
+        function onFileNewButtonClick(event) {
+            if (!game.isStopped() || !confirm("Shell will clear everything. Did you save your work?"))
+                return;
+            editor.entityList = [];
+            editor.selected = null;
+            updatePropertiesTable();
+            updateEventEditor();
+        }
+        /**
+         * Show a file dialog for opening up a game project
+         **/
+        function onFileOpenButtonClick(event) {
+            if (!game.isStopped())
+                return;
+            //open file dialog
+            fileDialog.click();
+        }
+        /**
+         * Download a file describing the game project in the JSON format.
+         * Each entity's GUID gets removed, as that stuff shouldn't be saved with the project.
+         * Shell means new ones will be created when the project is loaded back up again
+         **/
+        function onFileSaveButtonClick(event) {
+            var out = { entityList: [] };
+            //copy each entity so that we can remove their GUIDs
+            for (var i = 0; i < editor.entityList.length; i++) {
+                var copied = makeRealEntity(editor.entityList[i]);
+                delete copied.__guid;
+                out.entityList.push(copied);
+            }
+            var data = new Blob([JSON.stringify(out)], { type: "application/json" });
+            //hackily download the file by spoofing a click event to an invisible link
+            var virtualLink = document.createElement("a");
+            virtualLink.setAttribute("download", "game.json");
+            virtualLink.href = URL.createObjectURL(data);
+            virtualLink.dispatchEvent(new MouseEvent("click"));
+        }
+        function onFileExportButtonClick(event) {
+            //TODO
+        }
+        /**
+         * Called after the dialog opened through the open button closes
+         **/
+        function onFileDialogClose(event) {
+            //alias name for file dialog
+            var dialog = event.target;
+            //must have selected one file
+            if (dialog.files.length > 0) {
+                var reader = new FileReader();
+                //set hook for when reader reads
+                reader.onload = function () {
+                    var data = JSON.parse(reader.result);
+                    editor.entityList = [];
+                    //for every entity, compile its functions and make sure they're BaseEntities;
+                    for (var _i = 0, _a = data.entityList; _i < _a.length; _i++) {
+                        var ent = _a[_i];
+                        editor.entityList.push(makeRealEntity(ent));
+                    }
+                    //reset some editor stuff
+                    editor.selected = null;
+                    updatePropertiesTable();
+                    updateEventEditor();
+                };
+                //read the selected file
+                reader.readAsText(dialog.files[0]);
+                fileDialog.value = null;
+            }
+        }
+        /**
+         * Take an object that looks like an entity and make a new BaseEntity with all of its properties
+         *   properly applied and copied.
+         * Can be used to duplicate any entity, though not "deep" if any members are reference types.
+         **/
+        function makeRealEntity(ent) {
+            var result = new entity_1.Entity();
+            for (var key in ent) {
+                if (key === "__guid")
+                    continue;
+                if (key.substring(0, 4) == "__on" && key.substring(key.length - 6) == "String") {
+                    //all function strings will be of the form __<FuncName>String
+                    var memName = key.substring(0, key.lastIndexOf("String"));
+                    var func = new Function("event", ent[key]);
+                    result[memName] = func;
+                }
+                result[key] = ent[key];
+            }
+            return result;
+        }
+        /**
+         * Unload the contents of the entity's event function string into the Shell box
+         **/
+        function updateEventEditor() {
+            if (!editor.selected) {
+                eventEditor.setValue("");
+                return;
+            }
+            eventEditor.setValue(editor.selected[chosenEvent + "String"]);
+        }
+        /**
+         * Clears the properties table and readds editable rows for every property of the selected entity.
+         **/
+        var debounceTimeout = null;
+        function updatePropertiesTable() {
+            //remove all rows
+            while (propertiesTable.lastElementChild !== null) {
+                propertiesTable.lastElementChild.querySelectorAll("input")[0] /*.removeEventListener("change", onPropertyFieldChange)*/;
+                propertiesTable.removeChild(propertiesTable.lastElementChild);
+            }
+            if (editor.selected === null)
+                return;
+            //add all properties except for functions and hidden properties (begins with __)
+            for (var key in editor.selected) {
+                if (typeof editor.selected[key] !== "function" && key.substring(0, 2) != "__") {
+                    var row = document.createElement("div");
+                    row.classList.add("table-row");
+                    var nameCol = document.createElement("div");
+                    nameCol.classList.add("table-col");
+                    nameCol.classList.add("prop_common");
+                    nameCol.textContent = key;
+                    row.appendChild(nameCol);
+                    var editorCol = document.createElement("div");
+                    editorCol.classList.add("table-col");
+                    var editorField = document.createElement("input");
+                    editorField.value = editor.selected[key];
+                    editorCol.appendChild(editorField);
+                    //add debounce to each editable field that schedule an update of the entity's property 50 ms after 
+                    //the user types in the box
+                    editorField.addEventListener("keydown", function (e) {
+                        if (debounceTimeout) {
+                            clearTimeout(debounceTimeout);
+                            debounceTimeout = null;
+                        }
+                        debounceTimeout = setTimeout(function () {
+                            onPropertyFieldChange(e);
+                        }, 50);
+                    });
+                    editorField.setAttribute("data-key", key);
+                    row.appendChild(editorCol);
+                    propertiesTable.appendChild(row);
+                }
+            }
+        }
+    })(Shell || (Shell = {}));
+});
