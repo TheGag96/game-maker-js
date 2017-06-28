@@ -1,6 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    var monaco = window["monaco"];
     function showAutocompletion(obj) {
         // Disable default autocompletion for javascript
         monaco.languages.typescript.javascriptDefaults.setCompilerOptions({ noLib: true });

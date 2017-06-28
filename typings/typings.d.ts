@@ -1,15 +1,5 @@
-/**
- * Enum for the different kinds of shapes that can be checked by collision detection
- **/
-declare enum CollisionType {
-  none = 0,
-  rectangle
-  //circle
-  //line
-}
-
 interface ICollisionBounds {
-  type: CollisionType;
+  type: any;
 }
 
 interface IRectangleBounds extends ICollisionBounds {
@@ -30,7 +20,7 @@ interface ICollidable {
   blockedRight: boolean;
   
   __getCollisionBounds: ()=>ICollisionBounds;
-  __recalculateCollisionBounds: ()=>ICollisionBounds;
+  __recalculateCollisionBounds: (compVars: any)=>void;
 }
 
 interface IBaseEntity extends ICollidable {
@@ -48,6 +38,10 @@ interface IBaseEntity extends ICollidable {
   //velocity
   velX: number;
   velY: number;
+
+  //size
+  width:  number;
+  height: number;
 
   //higher means it will be drawn on top of other objects
   priority: number;
@@ -71,8 +65,6 @@ interface IBaseEntity extends ICollidable {
   __draw: (drawContext: CanvasRenderingContext2D)=>void;
 }
 
-type Direction = "up" | "down" | "left" | "right";
-
 /**
  * Passed as an argument when __onGameStart() is triggered
  **/
@@ -92,5 +84,5 @@ interface IUpdateEvent {
  **/
 interface ICollisionEvent {
   other:     IBaseEntity;
-  direction: Direction;
+  direction: any;
 }

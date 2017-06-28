@@ -1,4 +1,4 @@
-define(["require", "exports", "./collision", "./keys"], function (require, exports, collision_1, keys_1) {
+define(["require", "exports", "./collision", "./keys", "./enums"], function (require, exports, collision_1, keys_1, enums_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var State;
@@ -29,13 +29,14 @@ define(["require", "exports", "./collision", "./keys"], function (require, expor
          * Starts the game
          **/
         GameRunner.prototype.start = function (list) {
+            var _this = this;
             if (this.state != State.stopped)
                 return;
             this.entityList = list;
             this.state = State.running;
             //run first frame entity code if it's the start
             for (var i = 0; i < this.entityList.length; i++) {
-                this.entityList[i].__onGameStart(null);
+                this.tryUserFunc(function () { _this.entityList[i].__onGameStart(null); });
             }
         };
         /**
@@ -76,6 +77,7 @@ define(["require", "exports", "./collision", "./keys"], function (require, expor
          * Runs the main game loop
          **/
         GameRunner.prototype.step = function () {
+            var _this = this;
             //clear screen
             this.drawContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
             //if we aren't paused, update, move, and collide all entities
@@ -83,7 +85,7 @@ define(["require", "exports", "./collision", "./keys"], function (require, expor
                 for (var i = 0; i < this.entityList.length; i++) {
                     var ent = this.entityList[i];
                     if (!ent.__removeFlag) {
-                        this.entityList[i].__onUpdate(null);
+                        this.tryUserFunc(function () { _this.entityList[i].__onUpdate(null); });
                     }
                     if (ent.__removeFlag) {
                         this.entityList.splice(i, 1);
@@ -141,8 +143,8 @@ define(["require", "exports", "./collision", "./keys"], function (require, expor
          * Entities with collides=false will not be checked for collision.
          **/
         GameRunner.prototype.moveAndCollideEntities = function () {
-            var loopVar = [{ comp: "x", velComp: "velX", prevComp: "prevX", sizeComp: "width", dirs: ["left", "right"] },
-                { comp: "y", velComp: "velY", prevComp: "prevY", sizeComp: "height", dirs: ["up", "down"] }];
+            var loopVar = [{ comp: "x", velComp: "velX", prevComp: "prevX", sizeComp: "width", dirs: [enums_1.Direction.left, enums_1.Direction.right] },
+                { comp: "y", velComp: "velY", prevComp: "prevY", sizeComp: "height", dirs: [enums_1.Direction.up, enums_1.Direction.down] }];
             for (var _i = 0, _a = this.entityList; _i < _a.length; _i++) {
                 var ent = _a[_i];
                 ent.blockedUp = false;
@@ -185,13 +187,26 @@ define(["require", "exports", "./collision", "./keys"], function (require, expor
                                 entAEvent.direction = dirs[1];
                                 entBEvent.direction = dirs[0];
                             }
-                            entA.__onCollision(entAEvent);
-                            entB.__onCollision(entBEvent);
+                            this.tryUserFunc(function () { entA.__onCollision(entAEvent); });
+                            this.tryUserFunc(function () { entB.__onCollision(entBEvent); });
                             entA.__recalculateCollisionBounds(loopVar[z]);
                             entB.__recalculateCollisionBounds(loopVar[z]);
                         }
                     }
                 }
+            }
+        };
+        /**
+         * Attemps to call a user-defined hook in a safe manner,
+         * stopping the game if an exception is thrown.
+         **/
+        GameRunner.prototype.tryUserFunc = function (func) {
+            try {
+                func();
+            }
+            catch (e) {
+                console.log(e);
+                this.stop();
             }
         };
         return GameRunner;

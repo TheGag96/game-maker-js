@@ -1,3 +1,5 @@
+import {CollisionType} from "./enums";
+
 /**
  * Class describing the most basic Entity that can be used with the game engine
  **/

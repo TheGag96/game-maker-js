@@ -1,13 +1,20 @@
-define(["require", "exports", "./collision"], function (require, exports, collision_1) {
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+define(["require", "exports", "./enums"], function (require, exports, enums_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     /**
      * Class describing the most basic Entity that can be used with the game engine
      **/
     var Entity = (function () {
-        /**
-         * Default constructor. Generates a new unique GUID for the instance.
-         **/
         function Entity() {
             //user-defined entity name
             this.name = "";
@@ -37,7 +44,7 @@ define(["require", "exports", "./collision"], function (require, exports, collis
             //internal flag for removing this entity at/after the next __onUpdate()
             this.__removeFlag = false;
             this.__guid = this.__generateGUID();
-            this.__collisionBounds = { type: collision_1.CollisionType.rectangle };
+            this.__collisionBounds = { type: enums_1.CollisionType.rectangle };
         }
         /**
          * Sets an entity's remove flag. Will be removed before or after the entity updates next
@@ -89,7 +96,7 @@ define(["require", "exports", "./collision"], function (require, exports, collis
             var dirs = compVars.dirs;
             //set up custom bounding boxes using previous and current positions to account for high entity speeds
             var bbox = {
-                type: collision_1.CollisionType.rectangle,
+                type: enums_1.CollisionType.rectangle,
                 x: this.x,
                 y: this.y,
                 width: this.width,
@@ -102,9 +109,6 @@ define(["require", "exports", "./collision"], function (require, exports, collis
             rectBounds[comp] = Math.min(this[comp], this[prevComp]);
             rectBounds[sizeComp] = Math.abs(this[prevComp] - this[comp]) + this[sizeComp];
         };
-        /**
-         * Retrieves the collision bounds for this entity
-         */
         Entity.prototype.__getCollisionBounds = function () { return this.__collisionBounds; };
         /**
          * Generate a pseudo GUID randomly (not guaranteed to be unique). Thanks guid.us!
@@ -118,4 +122,36 @@ define(["require", "exports", "./collision"], function (require, exports, collis
         return Entity;
     }());
     exports.Entity = Entity;
+    var OvalEntity = (function (_super) {
+        __extends(OvalEntity, _super);
+        function OvalEntity() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        OvalEntity.prototype.__draw = function (drawContext) {
+            drawContext.fillStyle = this.color;
+            drawContext.save();
+            drawContext.translate(this.x + this.width / 2, this.y + this.height / 2);
+            drawContext.scale(this.width, this.height);
+            drawContext.beginPath();
+            drawContext.arc(0, 0, 0.5, 0, 2 * Math.PI, false);
+            drawContext.fill();
+            drawContext.restore();
+        };
+        return OvalEntity;
+    }(Entity));
+    var TextEntity = (function (_super) {
+        __extends(TextEntity, _super);
+        function TextEntity() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.text = "";
+            _this.font = "12pt Arial";
+            return _this;
+        }
+        TextEntity.prototype.__draw = function (drawContext) {
+            drawContext.fillStyle = this.color;
+            drawContext.font = this.font;
+            drawContext.fillText(this.text, this.x, this.y);
+        };
+        return TextEntity;
+    }(Entity));
 });

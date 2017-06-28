@@ -1,5 +1,6 @@
-import {Collision, CollisionType} from "./collision"
-import {Keys}                     from "./keys"
+import {Collision} from "./collision"
+import {Keys}      from "./keys"
+import {Direction} from "./enums"
 
 enum State {
   stopped = 1,
@@ -47,7 +48,7 @@ export class GameRunner {
 
     //run first frame entity code if it's the start
     for (var i = 0; i < this.entityList.length; i++) {
-      this.entityList[i].__onGameStart(null);
+      this.tryUserFunc(() => { this.entityList[i].__onGameStart(null); });
     }
   }
 
@@ -104,7 +105,7 @@ export class GameRunner {
         var ent = this.entityList[i];
 
         if (!ent.__removeFlag) {
-          this.entityList[i].__onUpdate(null);
+          this.tryUserFunc(() => { this.entityList[i].__onUpdate(null); });
         }
 
         if (ent.__removeFlag) {
@@ -170,8 +171,8 @@ export class GameRunner {
    * Entities with collides=false will not be checked for collision.
    **/
   moveAndCollideEntities() {
-    var loopVar = [{comp:"x", velComp:"velX", prevComp:"prevX", sizeComp: "width", dirs:["left", "right"]},
-                  {comp:"y", velComp:"velY", prevComp:"prevY", sizeComp: "height", dirs:["up", "down"]}];
+    var loopVar = [{comp:"x", velComp:"velX", prevComp:"prevX", sizeComp: "width", dirs:[Direction.left, Direction.right]},
+                  {comp:"y", velComp:"velY", prevComp:"prevY", sizeComp: "height", dirs:[Direction.up, Direction.down]}];
 
     for (let ent of this.entityList) {
       ent.blockedUp    = false;
@@ -206,15 +207,15 @@ export class GameRunner {
           if (!entB.collides) continue;
           
           if (Collision.testCollision(entA.__getCollisionBounds(), entB.__getCollisionBounds())) {
-            var entAEvent = {
+            var entAEvent: ICollisionEvent = {
               other: entB,
               direction: dirs[0]
-            }
+            } as ICollisionEvent;
 
-            var entBEvent = {
+            var entBEvent: ICollisionEvent = {
               other: entA,
               direction: dirs[1]
-            }
+            } as ICollisionEvent;
 
             //switch direction of collision based on velocity difference
             if (entA[velComp] - entB[velComp] >= 0) {
@@ -222,14 +223,28 @@ export class GameRunner {
               entBEvent.direction = dirs[0];
             }
 
-            entA.__onCollision(entAEvent);
-            entB.__onCollision(entBEvent);
+            this.tryUserFunc(() => { entA.__onCollision(entAEvent); });
+            this.tryUserFunc(() => { entB.__onCollision(entBEvent); });
 
             entA.__recalculateCollisionBounds(loopVar[z]);
             entB.__recalculateCollisionBounds(loopVar[z]);
           }
         }
       }
+    }
+  }
+
+  /**
+   * Attemps to call a user-defined hook in a safe manner, 
+   * stopping the game if an exception is thrown.
+   **/
+  tryUserFunc(func) {
+    try {
+      func();
+    }
+    catch (e) {
+      console.log(e);
+      this.stop();
     }
   }
 }

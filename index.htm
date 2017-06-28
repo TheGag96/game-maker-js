@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="css/style.css">
-    <script data-main="js/require-config.js" src="js/lib/require.js"></script>
+    <script data-main="js/require-config" src="js/lib/require.js"></script>
   </head>
 
   <body>
@@ -43,9 +43,16 @@
       <div class="sidebar-properties">
         <h2>Properties:</h2>
 
-        <div id="properties-table">
-          <!--<div class="table-col"><input><button class="circle-button remove"><i class="fa fa-times"></i></button></div>-->
+        <div id="properties-table" data-bind="foreach: props">
+          <div class="table-row">
+            <div class="table-col prop_common" data-bind="text: name"></div>
+            <div class="table-col">
+              <input type="text" data-bind="css: valid, value: stuff, valueUpdate: 'keyup'">
+            </div>
+          </div>  
         </div>
+
+        <!--<div class="table-col"><input><button class="circle-button remove"><i class="fa fa-times"></i></button></div>-->
 
         <button class="circle-button add"><i class="fa fa-plus"></i></button>
       </div>

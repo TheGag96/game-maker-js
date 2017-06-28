@@ -1,4 +1,4 @@
-define(["require", "exports", "./game", "./editor", "./keys", "./entity"], function (require, exports, game_1, editor_1, keys_1, entity_1) {
+define(["require", "exports", "./game", "./editor", "./completions", "./keys", "./entity", "./enums"], function (require, exports, game_1, editor_1, completions_1, keys_1, entity_1, enums_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     /**********************
@@ -6,6 +6,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
      **********************/
     var editor;
     var game;
+    var ko = require("knockout");
     /*****************
      * Main function *
      *****************/
@@ -13,7 +14,9 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
         var canvas = document.getElementById("field");
         editor = new editor_1.Editor(canvas);
         game = new game_1.GameRunner(canvas);
-        window.game = game;
+        window.Game = game;
+        window.Direction = enums_1.Direction;
+        window.Editor = editor;
         Shell.init(canvas);
     }
     exports.main = main;
@@ -21,9 +24,9 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
      * List of all event functions editable by the user as well as their display names.
      **/
     var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
-    /*************************
+    /****************************
      * Main Shell handling code *
-     *************************/
+     ****************************/
     var Shell;
     (function (Shell) {
         //reference to canvas being drawn to
@@ -36,6 +39,47 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
         var chosenEvent = "__onGameStart";
         //reference to the file dialog element on the page
         var fileDialog = null;
+        var propertiesViewModel = new PropertiesViewModel();
+        function PropertiesViewModel() {
+            var self = this;
+            self.selected = {};
+            self.props = ko.observableArray([]);
+            self.selectEntity = function (ent) {
+                self.selected = ent;
+                var newArr = [];
+                for (var key in ent) {
+                    if (typeof ent[key] === "function" || key.substring(0, 2) === "__")
+                        continue;
+                    var newObserve = { name: key, stuff: ko.observable(ent[key]), valid: ko.observable(true) };
+                    newArr.push(newObserve);
+                    newObserve.stuff.subscribe(function (newVal) {
+                        if (!self.setPropWithType(this.name, newVal)) {
+                            this.stuff(self.selected[this.name]);
+                        }
+                    }, newObserve);
+                }
+                self.props(newArr);
+            };
+            self.setPropWithType = function (key, value) {
+                if (typeof self.selected[key] === "number") {
+                    var toNum = +value;
+                    if (!isNaN(toNum)) {
+                        self.selected[key] = toNum;
+                        return true;
+                    }
+                    return false;
+                }
+                else if (typeof self.selected[key] === "boolean") {
+                    var toBoolStr = value.trim().toLowerCase();
+                    self.selected[key] = toBoolStr == "true" || toBoolStr == "1";
+                }
+                else {
+                    self.selected[key] = value;
+                }
+                return true;
+            };
+        }
+        ;
         /**
          * Constructor for Shell object.
          * Sets many globals and binds event callbacks to itself.
@@ -47,7 +91,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
             canvas = canvas;
             propertiesTable = document.getElementById("properties-table");
             fileDialog = document.getElementById("file-dialog");
-            eventEditor = monaco.editor.create(document.getElementById('event-editor'), {
+            eventEditor = window["monaco"].editor.create(document.getElementById('event-editor'), {
                 value: "",
                 language: "javascript",
                 fontFamily: "Inconsolata-g",
@@ -55,10 +99,11 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
                 fontSize: 13,
             });
             eventEditor.getModel().updateOptions({ tabSize: 2 });
-            // showAutocompletion({
-            //   "Shell": new BaseEntity(),
-            //   "game": game
-            // });
+            completions_1.showAutocompletion({
+                "Shell": new entity_1.Entity(),
+                "Game": game,
+                "Direction": { up: 0, down: 1, left: 2, right: 3 }
+            });
             ////
             // Set up Shell event callbacks
             ////
@@ -108,22 +153,25 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
                 eventTabs.appendChild(newTabBtn);
                 eventTabs.appendChild(newTabLbl);
             }
+            ko.applyBindings(propertiesViewModel);
             //we're ready to go!
-            requestAnimationFrame(onUpdateCanvas);
+            requestAnimationFrame(onCanvasUpdate);
         }
         Shell.init = init;
         /**
          * Handles main game loop and drawing. Runs 60 times per second.
          **/
-        function onUpdateCanvas() {
+        function onCanvasUpdate() {
             //clear screen
             game.drawContext.clearRect(0, 0, game.canvas.width, game.canvas.height);
             if (game.isRunning())
                 game.step();
             else
                 editor.step();
+            if (game.isStopped())
+                onStopButtonClick(null);
             // console.log("wut");
-            requestAnimationFrame(onUpdateCanvas);
+            requestAnimationFrame(onCanvasUpdate);
         }
         /**
          * Handle mouse down events on canvas (delegates to editor)
@@ -138,7 +186,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
             //we don't need to update our Shell if the user clicks the same thing we've already selected
             //however, we still do if we selected nothing
             if (lastSelected != editor.selected) {
-                updatePropertiesTable();
+                propertiesViewModel.selectEntity(editor.selected);
                 updateEventEditor();
             }
         }
@@ -233,11 +281,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
                 //Shell way, we can restore the original states before starting the game
                 for (var _i = 0, _a = editor.entityList; _i < _a.length; _i++) {
                     var ent = _a[_i];
-                    var copied = new entity_1.Entity();
-                    for (var val in ent) {
-                        copied[val] = ent[val];
-                    }
-                    newEntityList.push(copied);
+                    newEntityList.push(makeRealEntity(ent));
                 }
                 playButtonLabelData.remove("fa-play");
                 playButtonLabelData.add("fa-pause");
@@ -264,6 +308,10 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
             var newOne = new entity_1.Entity();
             newOne.x = game.canvas.width / 2;
             newOne.y = game.canvas.height / 2;
+            for (var _i = 0, eventFuncs_1 = eventFuncs; _i < eventFuncs_1.length; _i++) {
+                var func = eventFuncs_1[_i];
+                newOne[func[0] + "String"] = "";
+            }
             editor.entityList.push(newOne);
         }
         /**
@@ -293,7 +341,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
             var toChange = event.target.getAttribute("data-key");
             if (typeof editor.selected[toChange] === "number") {
                 var toNum = +event.target.value;
-                if (toNum !== NaN)
+                if (!isNaN(toNum))
                     editor.selected[toChange] = toNum;
             }
             else if (typeof editor.selected[toChange] === "boolean") {
@@ -339,7 +387,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
                 return;
             editor.entityList = [];
             editor.selected = null;
-            updatePropertiesTable();
+            propertiesViewModel.selectEntity(null);
             updateEventEditor();
         }
         /**
@@ -394,7 +442,7 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
                     }
                     //reset some editor stuff
                     editor.selected = null;
-                    updatePropertiesTable();
+                    propertiesViewModel.selectEntity(null);
                     updateEventEditor();
                 };
                 //read the selected file
@@ -418,7 +466,8 @@ define(["require", "exports", "./game", "./editor", "./keys", "./entity"], funct
                     var func = new Function("event", ent[key]);
                     result[memName] = func;
                 }
-                result[key] = ent[key];
+                else
+                    result[key] = ent[key];
             }
             return result;
         }

@@ -1,3 +1,5 @@
+let monaco = window["monaco"];
+
 export function showAutocompletion(obj) { 
     // Disable default autocompletion for javascript
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({ noLib: true  });

@@ -3,6 +3,7 @@ import {Editor}             from "./editor"
 import {showAutocompletion} from "./completions"
 import {Keys}               from "./keys"
 import {Entity}             from "./entity"
+import {Direction}          from "./enums"
 
 /**********************
  * App globals *
@@ -10,6 +11,8 @@ import {Entity}             from "./entity"
 
 var editor: Editor;
 var game:   GameRunner;
+
+let ko = require("knockout");
 
 /*****************
  * Main function *
@@ -20,7 +23,9 @@ export function main() {
   editor     = new Editor(canvas);
   game       = new GameRunner(canvas);
 
-  (window as any).game = game;
+  (window as any).Game      = game;
+  (window as any).Direction = Direction;
+  (window as any).Editor    = editor;
 
   Shell.init(canvas);
 }
@@ -30,9 +35,9 @@ export function main() {
  **/
 var eventFuncs = [["__onGameStart", "Game Start"], ["__onUpdate", "Every Frame"], ["__onCollision", "On Collision"]];
 
-/*************************
+/****************************
  * Main Shell handling code *
- *************************/
+ ****************************/
 
 namespace Shell {
   //reference to canvas being drawn to
@@ -50,6 +55,58 @@ namespace Shell {
   //reference to the file dialog element on the page
   var fileDialog: HTMLInputElement = null;
 
+  var propertiesViewModel = new PropertiesViewModel();
+
+  function PropertiesViewModel() {
+    var self = this;
+
+    self.selected = {};
+
+    self.props = ko.observableArray([]);
+
+    self.selectEntity = function (ent) {
+      self.selected = ent;
+      var newArr    = [];
+
+      for (var key in ent) {
+        if (typeof ent[key] === "function" || key.substring(0, 2) === "__") continue;
+
+        var newObserve = {name: key, stuff: ko.observable(ent[key]), valid: ko.observable(true)};
+        newArr.push(newObserve);
+
+        newObserve.stuff.subscribe(function(newVal) {
+          if (!self.setPropWithType(this.name, newVal)) {
+            this.stuff(self.selected[this.name]);
+          }
+        }, newObserve);
+      }
+
+      self.props(newArr);
+    };
+
+    self.setPropWithType = function(key, value) {
+      if (typeof self.selected[key] === "number") {
+        var toNum = +value;
+
+        if (!isNaN(toNum)) {
+          self.selected[key] = toNum;
+          return true;
+        }
+        return false;
+      }
+      else if (typeof self.selected[key] === "boolean") {
+        var toBoolStr = value.trim().toLowerCase();
+
+        self.selected[key] = toBoolStr == "true" || toBoolStr == "1";
+      }
+      else {
+        self.selected[key] = value;
+      }
+
+      return true;
+    }
+  };
+
   /**
    * Constructor for Shell object. 
    * Sets many globals and binds event callbacks to itself. 
@@ -62,7 +119,7 @@ namespace Shell {
     canvas          = canvas;
     propertiesTable = document.getElementById("properties-table");
     fileDialog      = document.getElementById("file-dialog") as HTMLInputElement;
-    eventEditor = monaco.editor.create(document.getElementById('event-editor'), {
+    eventEditor = window["monaco"].editor.create(document.getElementById('event-editor'), {
       value:       "",
       language:    "javascript",
       fontFamily:  "Inconsolata-g",
@@ -72,10 +129,11 @@ namespace Shell {
 
     eventEditor.getModel().updateOptions({tabSize: 2});
   
-    // showAutocompletion({
-    //   "Shell": new BaseEntity(),
-    //   "game": game
-    // });
+    showAutocompletion({
+      "Shell": new Entity(),
+      "Game": game,
+      "Direction": {up: 0, down: 1, left: 2, right: 3}
+    });
 
     ////
     // Set up Shell event callbacks
@@ -137,23 +195,27 @@ namespace Shell {
       eventTabs.appendChild(newTabLbl);
     }
 
+    ko.applyBindings(propertiesViewModel);
+
     //we're ready to go!
-    requestAnimationFrame(onUpdateCanvas);
+    requestAnimationFrame(onCanvasUpdate);
   }
 
   /**
    * Handles main game loop and drawing. Runs 60 times per second.
    **/
-  function onUpdateCanvas() {
+  function onCanvasUpdate() {
     //clear screen
     game.drawContext.clearRect(0, 0, game.canvas.width, game.canvas.height);
 
     if (game.isRunning()) game.step();
     else                  editor.step();
 
+    if (game.isStopped()) onStopButtonClick(null);
+
     // console.log("wut");
 
-    requestAnimationFrame(onUpdateCanvas);
+    requestAnimationFrame(onCanvasUpdate);
   }
 
   /**
@@ -170,7 +232,7 @@ namespace Shell {
     //we don't need to update our Shell if the user clicks the same thing we've already selected
     //however, we still do if we selected nothing
     if (lastSelected != editor.selected) {
-      updatePropertiesTable();
+      propertiesViewModel.selectEntity(editor.selected);
       updateEventEditor();
     }
   }
@@ -310,8 +372,8 @@ namespace Shell {
     newOne.x = game.canvas.width/2;
     newOne.y = game.canvas.height/2;
 
-    for (let func in eventFuncs) {
-      newOne[func+"String"] = "";
+    for (let func of eventFuncs) {
+      newOne[func[0]+"String"] = "";
     }
 
     editor.entityList.push(newOne);
@@ -349,7 +411,7 @@ namespace Shell {
     if (typeof editor.selected[toChange] === "number") {
       var toNum = +event.target.value;
 
-      if (toNum !== NaN) editor.selected[toChange] = toNum;
+      if (!isNaN(toNum)) editor.selected[toChange] = toNum;
     }
     else if (typeof editor.selected[toChange] === "boolean") {
       var toBoolStr = event.target.value.trim().toLowerCase();
@@ -399,7 +461,7 @@ namespace Shell {
 
     editor.entityList = [];
     editor.selected = null;
-    updatePropertiesTable();
+    propertiesViewModel.selectEntity(null);
     updateEventEditor();
   }
 
@@ -464,7 +526,7 @@ namespace Shell {
         
         //reset some editor stuff
         editor.selected = null;
-        updatePropertiesTable();
+        propertiesViewModel.selectEntity(null);
         updateEventEditor();
       };
 

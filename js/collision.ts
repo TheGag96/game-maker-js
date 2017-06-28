@@ -1,3 +1,13 @@
+/**
+ * Enum for the different kinds of shapes that can be checked by collision detection
+ **/
+export enum CollisionType {
+  none = 0,
+  rectangle
+  //circle
+  //line
+}
+
 export class Collision {
   /**
    * Tests the collision between two objects, choosing the proper method depending on their shapes.

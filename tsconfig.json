@@ -2,12 +2,23 @@
   "compilerOptions": {
     "rootDir": "js",
     "target": "es5",
-    "module": "amd"
+    "module": "amd",
+    "typeRoots": [
+      "./typings"
+    ]
   },
 
-  "files": [
-    "js/typings.d.ts"
-  ],
+  // "files": [
+  //   // "typings.d.ts",
+  //   "js/collision.ts",
+  //   "js/completions.ts",
+  //   "js/editor.ts",
+  //   "js/entity.ts",
+  //   "js/game.ts",
+  //   "js/main.ts",
+  //   "js/keys.ts",
+  //   "js/require-config.ts"
+  // ],
 
   "compileOnSave": true,
   "typeAcquisition": {
