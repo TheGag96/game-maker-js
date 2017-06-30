@@ -164,7 +164,7 @@ export class Entity implements IBaseEntity {
         var func        = new Function("event", ent[key]);
         result[memName] = func;
       }
-      else result[key] = ent[key];
+      result[key] = ent[key];
     }
 
     return result;

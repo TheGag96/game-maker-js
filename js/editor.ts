@@ -47,6 +47,7 @@ export class EditorViewModel {
 
     (window as any).Game      = this.game;
     (window as any).Direction = Direction;
+    (window as any).Editor    = this;
 
     window.addEventListener("beforeunload", (e) => {this.onWindowUnload(e)}  );
     window.addEventListener("keydown",      (e) => {this.onWindowKeyDown(e)} );
@@ -257,6 +258,8 @@ export class EditorViewModel {
    *   - Beginning to drag an entity
    **/
   onCanvasMouseDown(event, data) {
+    if (!this.game.isStopped()) return;
+
     var mouse = {x: event.pageX, y: event.pageY};
 
     let lastSelected = this.selected;
@@ -276,6 +279,7 @@ export class EditorViewModel {
     if (lastSelected != this.selected) {
       this.eventViewModel.selectEntity(this.selected);
       this.propertiesViewModel.selectEntity(this.selected);
+      this.eventViewModel.updateEventEditor();
     }
 
     //save last mouse position so that it can be used to detect dragging
@@ -286,6 +290,7 @@ export class EditorViewModel {
    * If the user releases the mouse, they are no longer dragging an entity
    **/
   onCanvasMouseUp(event) {
+    if (!this.game.isStopped()) return;
     this.dragging = null;
   }
 
@@ -293,6 +298,8 @@ export class EditorViewModel {
    * At the moment, this hook only handles dragging entities around the canvas.
    **/
   onCanvasMouseMove(event) {
+    if (!this.game.isStopped()) return;
+
     let mouse = {x: event.clientX, y: event.clientY};
 
     if (this.dragging) {
@@ -306,7 +313,7 @@ export class EditorViewModel {
   }
 
   onCanvasKeyDown(event) {
-    if (event.which == Keys.delete) {
+    if (this.game.isStopped() && event.which == Keys.delete) {
       event.preventDefault();
       this.removeSelectedEntity();
     }

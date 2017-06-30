@@ -26,6 +26,7 @@ define(["require", "exports", "./entity", "./game", "./enums", "./properties", "
             this.fileDialog = document.getElementById("file-dialog");
             window.Game = this.game;
             window.Direction = enums_1.Direction;
+            window.Editor = this;
             window.addEventListener("beforeunload", function (e) { _this.onWindowUnload(e); });
             window.addEventListener("keydown", function (e) { _this.onWindowKeyDown(e); });
             window.addEventListener("resize", function (e) { _this.onWindowResize(e); });
@@ -208,6 +209,8 @@ define(["require", "exports", "./entity", "./game", "./enums", "./properties", "
          *   - Beginning to drag an entity
          **/
         EditorViewModel.prototype.onCanvasMouseDown = function (event, data) {
+            if (!this.game.isStopped())
+                return;
             var mouse = { x: event.pageX, y: event.pageY };
             var lastSelected = this.selected;
             this.selected = null;
@@ -223,6 +226,7 @@ define(["require", "exports", "./entity", "./game", "./enums", "./properties", "
             if (lastSelected != this.selected) {
                 this.eventViewModel.selectEntity(this.selected);
                 this.propertiesViewModel.selectEntity(this.selected);
+                this.eventViewModel.updateEventEditor();
             }
             //save last mouse position so that it can be used to detect dragging
             this.lastMouse = mouse;
@@ -231,12 +235,16 @@ define(["require", "exports", "./entity", "./game", "./enums", "./properties", "
          * If the user releases the mouse, they are no longer dragging an entity
          **/
         EditorViewModel.prototype.onCanvasMouseUp = function (event) {
+            if (!this.game.isStopped())
+                return;
             this.dragging = null;
         };
         /**
          * At the moment, this hook only handles dragging entities around the canvas.
          **/
         EditorViewModel.prototype.onCanvasMouseMove = function (event) {
+            if (!this.game.isStopped())
+                return;
             var mouse = { x: event.clientX, y: event.clientY };
             if (this.dragging) {
                 this.dragging.x += mouse.x - this.lastMouse.x;
@@ -246,7 +254,7 @@ define(["require", "exports", "./entity", "./game", "./enums", "./properties", "
             this.lastMouse = mouse;
         };
         EditorViewModel.prototype.onCanvasKeyDown = function (event) {
-            if (event.which == keys_1.Keys.delete) {
+            if (this.game.isStopped() && event.which == keys_1.Keys.delete) {
                 event.preventDefault();
                 this.removeSelectedEntity();
             }

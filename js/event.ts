@@ -1,18 +1,18 @@
 let ko = require("knockout");
 
 export class EventViewModel {
-  eventEditor; 
+  eventEditor = null; 
 
   selected: IBaseEntity = null;
-
-  // funcBodyText = ko.observable("");
-  chosenEvent = ko.observable("");
 
   eventFuncs = [
     { funcName: "__onGameStart", prettyName: "Game Start"   },
     { funcName: "__onUpdate",    prettyName: "Every Frame"  },
     { funcName: "__onCollision", prettyName: "On Collision" },
   ];
+
+  // funcBodyText = ko.observable("");
+  chosenEvent = ko.observable("");
 
   constructor() {
     this.eventEditor = window["monaco"].editor.create(document.getElementById('event-editor'), {
@@ -50,8 +50,8 @@ export class EventViewModel {
    * If there's a syntax error, a popup will come up and neither the function member or its text member will change.
    **/
   onEventApplyButtonClick(event) {
-    console.log(this);
     try {
+      if (this.chosenEvent() == "") return;
       var func = new Function("event", this.eventEditor.getValue());
       this.selected[this.chosenEvent()] = func;
       this.selected[this.chosenEvent() + "String"] = this.eventEditor.getValue();
@@ -66,6 +66,8 @@ export class EventViewModel {
    * Unload the contents of the entity's event function string into the Shell box
    **/
   updateEventEditor() {
+    if (this.chosenEvent() == "") return;
+    
     if (!this.selected) {
       this.eventEditor.setValue("");
     }

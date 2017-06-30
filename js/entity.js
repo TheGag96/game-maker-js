@@ -135,8 +135,7 @@ define(["require", "exports", "./enums"], function (require, exports, enums_1) {
                     var func = new Function("event", ent[key]);
                     result[memName] = func;
                 }
-                else
-                    result[key] = ent[key];
+                result[key] = ent[key];
             }
             return result;
         };

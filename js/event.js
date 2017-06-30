@@ -4,14 +4,15 @@ define(["require", "exports"], function (require, exports) {
     var ko = require("knockout");
     var EventViewModel = (function () {
         function EventViewModel() {
+            this.eventEditor = null;
             this.selected = null;
-            // funcBodyText = ko.observable("");
-            this.chosenEvent = ko.observable("");
             this.eventFuncs = [
                 { funcName: "__onGameStart", prettyName: "Game Start" },
                 { funcName: "__onUpdate", prettyName: "Every Frame" },
                 { funcName: "__onCollision", prettyName: "On Collision" },
             ];
+            // funcBodyText = ko.observable("");
+            this.chosenEvent = ko.observable("");
             this.eventEditor = window["monaco"].editor.create(document.getElementById('event-editor'), {
                 value: "",
                 language: "javascript",
@@ -41,8 +42,9 @@ define(["require", "exports"], function (require, exports) {
          * If there's a syntax error, a popup will come up and neither the function member or its text member will change.
          **/
         EventViewModel.prototype.onEventApplyButtonClick = function (event) {
-            console.log(this);
             try {
+                if (this.chosenEvent() == "")
+                    return;
                 var func = new Function("event", this.eventEditor.getValue());
                 this.selected[this.chosenEvent()] = func;
                 this.selected[this.chosenEvent() + "String"] = this.eventEditor.getValue();
@@ -56,6 +58,8 @@ define(["require", "exports"], function (require, exports) {
          * Unload the contents of the entity's event function string into the Shell box
          **/
         EventViewModel.prototype.updateEventEditor = function () {
+            if (this.chosenEvent() == "")
+                return;
             if (!this.selected) {
                 this.eventEditor.setValue("");
             }
