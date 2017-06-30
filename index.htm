@@ -3,51 +3,88 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>KL Game Maker</title>
+    
     <link rel="stylesheet" type="text/css" href="css/style.css">
+    
     <script data-main="js/require-config" src="js/lib/require.js"></script>
   </head>
 
+
+
+
   <body>
     <div class="main col">
-      <canvas id="field" tabindex="1"></canvas>
+      <canvas id="field" tabindex="1" data-bind="boundEvent: { keydown: onCanvasKeyDown, mousedown: onCanvasMouseDown, mouseup: onCanvasMouseUp, mousemove: onCanvasMouseMove }"></canvas>
     </div>
+
+
 
     <div class="sidebar col">
       <div class="sidebar-header">
         <h1 class="center">KL Game Maker</h1>
-        <div class="center">v0.02</div>
+        <div class="center">v0.03</div>
       </div>
 
+
       <div class="sidebar-controls">
-        <input id="file-dialog" type="file" style="display: none;">
-        <button id="file-new-button"><i class="fa fa-file-o" aria-hidden="true"></i></button>
-        <button id="file-open-button"><i class="fa fa-folder-open-o" aria-hidden="true"></i></button>
-        <button id="file-save-button"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-        <button id="file-export-button"><i class="fa fa-share-square-o" aria-hidden="true"></i></button>
+        <input id="file-dialog" type="file" style="display: none;" data-bind="boundEvent: { change: onFileDialogClose }">
+
+        <button id="file-new-button" data-bind="click: newProject">
+          <i class="fa fa-file-o" aria-hidden="true"></i>
+        </button>
+
+        <button id="file-open-button" data-bind="click: openProject">
+          <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+        </button>
+
+        <button id="file-save-button" data-bind="click: saveProject">
+          <i class="fa fa-floppy-o" aria-hidden="true"></i>
+        </button>
+
+        <button id="file-export-button" data-bind="click: exportProject">
+          <i class="fa fa-share-square-o" aria-hidden="true"></i>
+        </button>
       </div>
       
-      <div class="sidebar-controls">
-        <button id="play-pause-button"><i class="fa fa-play" aria-hidden="true"></i></button>
-        <button id="stop-button"><i class="fa fa-stop" aria-hidden="true"></i></button>
-      </div>
 
       <div class="sidebar-controls">
-        <button id="add-sprite-button">Add Sprite</button>
-        <button id="duplicate-sprite-button">Duplicate Sprite</button>
-        <button id="remove-sprite-button">Remove Sprite</button>
+        <button id="play-pause-button" data-bind="click: togglePlayPauseGame">
+          <i class="fa" data-bind="css: { 'fa-play': gameRunningState() != 2, 'fa-pause': gameRunningState() == 2 }" aria-hidden="true"></i>
+        </button>
+
+        <button id="stop-button" data-bind="click: stopGame, style: { flex: gameRunningState() == 1 ? 0 : 1 }, css: { 'no-padding': gameRunningState() == 1 }">
+          <i class="fa" aria-hidden="true" data-bind="css: { 'fa-stop': gameRunningState() != 1 }"></i>
+        </button>
       </div>
 
-      <div class="sidebar-properties">
+
+      <div class="sidebar-controls">
+        <button id="add-sprite-button" data-bind="click: spawnEntity">
+          Add Sprite
+        </button>
+        
+        <button id="duplicate-sprite-button" data-bind="click: duplicateSelectedEntity">
+          Duplicate Entity
+        </button>
+        
+        <button id="remove-sprite-button" data-bind="click: removeSelectedEntity">
+          Remove Entity
+        </button>
+      </div>
+
+
+      <div class="sidebar-properties" data-bind="with: propertiesViewModel">
         <h2>Properties:</h2>
 
         <div id="properties-table" data-bind="foreach: props">
           <div class="table-row">
             <div class="table-col prop_common" data-bind="text: name"></div>
             <div class="table-col">
-              <input type="text" data-bind="css: valid, value: stuff, valueUpdate: 'keyup'">
+              <input type="text" data-bind="value: stuff, valueUpdate: 'keyup'">
             </div>
           </div>  
         </div>
@@ -57,18 +94,23 @@
         <button class="circle-button add"><i class="fa fa-plus"></i></button>
       </div>
         
-      <div class="sidebar-events">
+
+      <div class="sidebar-events" data-bind="with: eventViewModel">
         <h2>Event Editor:</h2>
 
         <div id="event-editor-container">
-          <div id="events-tabs" class="tab-view">
+          <div id="events-tabs" class="tab-view" data-bind="foreach: eventFuncs">
+            <input type="radio" name="events-tabs" data-bind="value: funcName, attr: { id: 'tab-btn'+funcName }">
+            <label data-bind="attr: { for: 'tab-btn'+funcName }, text: prettyName, boundEvent: {click: $parent.onEventTabClick}"></label>
           </div>
 
-          <div id="event-editor"></div>
+          <div id="event-editor">
+          </div>
         
-          <button id="event-apply-button">Apply</button>
+          <button id="event-apply-button" data-bind="click: onEventApplyButtonClick">
+            Apply
+          </button>
         </div>
-
       </div>
     </div>
   </body>
