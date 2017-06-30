@@ -12,6 +12,7 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
          * Creates a new runnable game
          **/
         function GameRunner(canvas) {
+            var _this = this;
             //stores all entities in the game world
             this.entityList = [];
             //whether the game is running, paused, or stopped
@@ -24,6 +25,8 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
             canvas.width = canvas.parentElement.clientWidth;
             canvas.height = canvas.parentElement.clientHeight;
             this.drawContext.textBaseline = "top";
+            canvas.addEventListener("keydown", function (e) { _this.onKeyDown(e); });
+            canvas.addEventListener("keyup", function (e) { _this.onKeyUp(e); });
         }
         /**
          * Starts the game
@@ -34,10 +37,16 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
                 return;
             this.entityList = list;
             this.state = State.running;
+            var _loop_1 = function (ent) {
+                this_1.tryUserFunc(function () { ent.__onGameStart(null); });
+            };
+            var this_1 = this;
             //run first frame entity code if it's the start
-            for (var i = 0; i < this.entityList.length; i++) {
-                this.tryUserFunc(function () { _this.entityList[i].__onGameStart(null); });
+            for (var _i = 0, _a = this.entityList; _i < _a.length; _i++) {
+                var ent = _a[_i];
+                _loop_1(ent);
             }
+            requestAnimationFrame(function () { _this.update(); });
         };
         /**
          * Stops the game
@@ -76,7 +85,7 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
         /**
          * Runs the main game loop
          **/
-        GameRunner.prototype.step = function () {
+        GameRunner.prototype.update = function () {
             var _this = this;
             //clear screen
             this.drawContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -103,6 +112,9 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
             //(allows isHeldOneFrame() to work)
             this.controls.updateKeyData();
             this.firstFrame = false;
+            //schedule a update call next frame if needed
+            if (!this.isStopped())
+                requestAnimationFrame(function () { _this.update(); });
         };
         /**
          * Adds an entity to the game world and reorders all entities based on their priority property
@@ -126,9 +138,10 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
          * Get an entity in the world by its name in O(n) time.
          **/
         GameRunner.prototype.getEntityByName = function (s) {
-            for (var i = 0; i < this.entityList.length; i++) {
-                if (this.entityList[i].name === s)
-                    return this.entityList[i];
+            for (var _i = 0, _a = this.entityList; _i < _a.length; _i++) {
+                var ent = _a[_i];
+                if (ent.name === s)
+                    return ent;
             }
             return null;
         };
@@ -208,6 +221,16 @@ define(["require", "exports", "./collision", "./keys", "./enums"], function (req
                 console.log(e);
                 this.stop();
             }
+        };
+        GameRunner.prototype.onKeyDown = function (event) {
+            if (!this.isRunning())
+                return;
+            this.controls.handleKeyEvent(event, true);
+        };
+        GameRunner.prototype.onKeyUp = function (event) {
+            if (!this.isRunning())
+                return;
+            this.controls.handleKeyEvent(event, false);
         };
         return GameRunner;
     }());

@@ -1,6 +1,6 @@
-import {Collision} from "./collision"
-import {Keys}      from "./keys"
-import {Direction} from "./enums"
+import {Collision} from "./collision";
+import {Keys}      from "./keys";
+import {Direction} from "./enums";
 
 enum State {
   stopped = 1,
@@ -35,6 +35,9 @@ export class GameRunner {
     canvas.height = canvas.parentElement.clientHeight;
 
     this.drawContext.textBaseline = "top";
+
+    canvas.addEventListener("keydown", (e) => {this.onKeyDown(e)});
+    canvas.addEventListener("keyup",   (e) => {this.onKeyUp(e)});
   }
 
   /**
@@ -47,9 +50,11 @@ export class GameRunner {
     this.state = State.running;
 
     //run first frame entity code if it's the start
-    for (var i = 0; i < this.entityList.length; i++) {
-      this.tryUserFunc(() => { this.entityList[i].__onGameStart(null); });
+    for (let ent of this.entityList) {
+      this.tryUserFunc(() => { ent.__onGameStart(null); });
     }
+
+    requestAnimationFrame(() => {this.update()});
   }
 
   /**
@@ -95,7 +100,7 @@ export class GameRunner {
   /**
    * Runs the main game loop
    **/
-  step() {
+  update() {
     //clear screen
     this.drawContext.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -127,6 +132,9 @@ export class GameRunner {
     this.controls.updateKeyData();
 
     this.firstFrame = false;
+
+    //schedule a update call next frame if needed
+    if (!this.isStopped()) requestAnimationFrame(() => {this.update()});
   }
 
   /**
@@ -153,8 +161,8 @@ export class GameRunner {
    * Get an entity in the world by its name in O(n) time.
    **/
   getEntityByName(s: string): IBaseEntity {
-    for (var i = 0; i < this.entityList.length; i++) {
-      if (this.entityList[i].name === s) return this.entityList[i];
+    for (let ent of this.entityList) {
+      if (ent.name === s) return ent;
     }
 
     return null;
@@ -247,6 +255,16 @@ export class GameRunner {
       this.stop();
     }
   }
+
+  onKeyDown(event) {
+    if (!this.isRunning()) return;
+    this.controls.handleKeyEvent(event, true);
+  }
+  
+  onKeyUp(event) {
+    if (!this.isRunning()) return;
+    this.controls.handleKeyEvent(event, false);
+  }
 }
 
 class Controls {
@@ -306,5 +324,4 @@ class Controls {
       this.keyData[event.which].pressed = isHeldDown;
     }
   }
-
 }

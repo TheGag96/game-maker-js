@@ -146,6 +146,29 @@ export class Entity implements IBaseEntity {
 
     return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
   }
+
+  /**
+   * Take an object that looks like an entity and make a new BaseEntity with all of its properties 
+   *   properly applied and copied. 
+   * Can be used to duplicate any entity, though not "deep" if any members are reference types.
+   **/
+  static constructEntity(ent): Entity {
+    var result = new Entity();
+
+    for (var key in ent) {
+      if (key === "__guid") continue;
+
+      if (key.substring(0, 4) == "__on" && key.substring(key.length-6) == "String") {
+        //all function strings will be of the form __<FuncName>String
+        var memName     = key.substring(0, key.lastIndexOf("String"));
+        var func        = new Function("event", ent[key]);
+        result[memName] = func;
+      }
+      else result[key] = ent[key];
+    }
+
+    return result;
+  }
 }
 
 class OvalEntity extends Entity {

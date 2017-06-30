@@ -7,8 +7,23 @@ require.config({
   }
 });
 
-require(["vs/editor/editor.main", "knockout"], ()=>{ 
-  require(["./main"], (mainModule)=>{
-    mainModule.main(); 
+require(["vs/editor/editor.main", "knockout"], (m, ko)=>{ 
+  require(["./editor"], (editorModule)=>{
+    ko.bindingHandlers.boundEvent = {
+      init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        function generateEvent(a) {
+          element.addEventListener(a, (e) => {
+            valueAccessor()[a].call(bindingContext["$parent"] || bindingContext["$root"], e, bindingContext["$data"]);
+          });
+        }
+
+        for (var event in valueAccessor()) { 
+          generateEvent(event);
+        }
+      },
+      
+  };
+ 
+    ko.applyBindings(new editorModule.EditorViewModel());
   });
 });
